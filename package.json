@@ -22,7 +22,7 @@
   "dependencies": {
     "@oddbird/popover-polyfill": "^0.7.0",
     "interestfor": "^1.0.14",
-    "lucide-react": "^0.511.0",
+    "lucide-react": "^1.71.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },
