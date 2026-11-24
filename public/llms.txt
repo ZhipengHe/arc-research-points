@@ -22,14 +22,14 @@
 
 ## Scheme & Role Matrix
 
-- **Explore** (Confirmed, Q1 2027 Mar, Annual, 3 yrs, $50k-$400k/yr): Lead CI (5), CI (3), SCI (ECR) (8).
-- **Initiate Fellowships** (Indicative, Q2 2027, Annual, 3 yrs, Salary + up to $50k/yr): Lead CI (8).
-- **Lead & Mentor** (Indicative, Q3 2027, Annual, 5 yrs, Up to $250k/yr + 2 postdocs + 2 HDRs): Lead CI/Director (7, no salary), SCI (ECR) (8).
-- **Indigenous Excellence** (Indicative, Q4 2027, Annual, 5 yrs, $50k-$500k/yr): Lead CI (5), CI (3), SCI (ECR) (8), SCI (MCR) (8).
-- **Collaborate** (Indicative, Q1 2028, Biennial, 5 yrs, $1m-$2m/yr): Lead CI/Director (7), Node Lead CI (5), CI (3), SCI (ECR) (8).
-- **CIEF** (Indicative Sub-scheme, Q2 2028, Annual, 5 yrs, Co-funded infrastructure): Lead CI (4), CI (2).
-- **Breakthrough** (Indicative, Q3 2028, Annual, 5 yrs, $200k-$600k/yr): Lead CI (5), CI (3), SCI (ECR) (8).
-- **Prioritise** (Indicative, Q4 2028 EOI / Q2 2029 Full, Biennial, 7 yrs, $4m-$6m/yr): Lead CI/Director (7), Node Lead CI (5), CI (3), SCI (ECR) (8).
+- **[Explore](https://www.arc.gov.au/funding-research/applying-grant/new-ncgp-schemes-overview/explore)** (Confirmed, Q1 2027 Mar, Annual, 3 yrs, $50k-$400k/yr): Lead CI (5), CI (3), SCI (ECR) (8).
+- **[Initiate Fellowships](https://www.arc.gov.au/funding-research/applying-grant/new-ncgp-schemes-overview/initiate-fellowships)** (Indicative, Q2 2027, Annual, 3 yrs, Salary + up to $50k/yr): Lead CI (8).
+- **[Lead & Mentor](https://www.arc.gov.au/funding-research/applying-grant/new-ncgp-schemes-overview/lead-and-mentor)** (Indicative, Q3 2027, Annual, 5 yrs, Up to $250k/yr + 2 postdocs + 2 HDRs): Lead CI/Director (7, no salary), SCI (ECR) (8).
+- **[Indigenous Excellence](https://www.arc.gov.au/funding-research/applying-grant/new-ncgp-schemes-overview/indigenous-excellence)** (Indicative, Q4 2027, Annual, 5 yrs, $50k-$500k/yr): Lead CI (5), CI (3), SCI (ECR) (8), SCI (MCR) (8).
+- **[Collaborate](https://www.arc.gov.au/funding-research/applying-grant/new-ncgp-schemes-overview/collaborate)** (Indicative, Q1 2028, Biennial, 5 yrs, $1m-$2m/yr): Lead CI/Director (7), Node Lead CI (5), CI (3), SCI (ECR) (8).
+- **[CIEF](https://www.arc.gov.au/funding-research/applying-grant/new-ncgp-schemes-overview/collaborate-infrastructure-equipment-and-facilities-cief)** (Indicative Sub-scheme, Q2 2028, Annual, 5 yrs, Co-funded infrastructure): Lead CI (4), CI (2).
+- **[Breakthrough](https://www.arc.gov.au/funding-research/applying-grant/new-ncgp-schemes-overview/breakthrough)** (Indicative, Q3 2028, Annual, 5 yrs, $200k-$600k/yr): Lead CI (5), CI (3), SCI (ECR) (8).
+- **[Prioritise](https://www.arc.gov.au/funding-research/applying-grant/new-ncgp-schemes-overview/prioritise)** (Indicative, Q4 2028 EOI / Q2 2029 Full, Biennial, 7 yrs, $4m-$6m/yr): Lead CI/Director (7), Node Lead CI (5), CI (3), SCI (ECR) (8).
 
 ## Official ARC References
 

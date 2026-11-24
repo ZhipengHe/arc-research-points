@@ -93,7 +93,7 @@
       "fundingMinAnnual": 50000,
       "fundingMaxAnnual": 400000,
       "quirkHint": "Trials partial randomisation in peer review; 60% Why / 20% How / 20% Who.",
-      "officialUrl": "https://www.arc.gov.au/funding-research/applying-grant/new-ncgp-schemes-overview",
+      "officialUrl": "https://www.arc.gov.au/funding-research/applying-grant/new-ncgp-schemes-overview/explore",
       "roles": [
         {
           "id": "lead-ci",
@@ -144,7 +144,7 @@
       "fundingMaxAnnual": 170000,
       "fundingExtraNote": "Fellowship salary + up to $50k/yr project funding",
       "quirkHint": "ECRs 0-5 yrs post-PhD (assessed in 0-2 yr and >2-5 yr cohorts).",
-      "officialUrl": "https://www.arc.gov.au/funding-research/applying-grant/new-ncgp-schemes-overview",
+      "officialUrl": "https://www.arc.gov.au/funding-research/applying-grant/new-ncgp-schemes-overview/initiate-fellowships",
       "roles": [
         {
           "id": "lead-ci",
@@ -175,7 +175,7 @@
       "fundingMaxAnnual": 250000,
       "fundingExtraNote": "+ 2 postdocs + 2 HDRs",
       "quirkHint": "No salary for Lead CI; includes Kathleen Fitzpatrick, Georgina Sweet & 2 Indigenous awards.",
-      "officialUrl": "https://www.arc.gov.au/funding-research/applying-grant/new-ncgp-schemes-overview",
+      "officialUrl": "https://www.arc.gov.au/funding-research/applying-grant/new-ncgp-schemes-overview/lead-and-mentor",
       "roles": [
         {
           "id": "lead-ci-director",
@@ -216,7 +216,7 @@
       "fundingMaxAnnual": 500000,
       "requiresIndigenous": true,
       "quirkHint": "Aboriginal & Torres Strait Islander researchers up to 15 yrs post-PhD; only scheme with SCI (MCR).",
-      "officialUrl": "https://www.arc.gov.au/funding-research/applying-grant/new-ncgp-schemes-overview",
+      "officialUrl": "https://www.arc.gov.au/funding-research/applying-grant/new-ncgp-schemes-overview/indigenous-excellence",
       "roles": [
         {
           "id": "lead-ci",
@@ -277,7 +277,7 @@
       "fundingMinAnnual": 1000000,
       "fundingMaxAnnual": 2000000,
       "quirkHint": "Partner Organisation mandatory with significant cash co-contribution.",
-      "officialUrl": "https://www.arc.gov.au/funding-research/applying-grant/new-ncgp-schemes-overview",
+      "officialUrl": "https://www.arc.gov.au/funding-research/applying-grant/new-ncgp-schemes-overview/collaborate",
       "roles": [
         {
           "id": "lead-ci-director",
@@ -339,7 +339,7 @@
       "fundingMaxAnnual": 0,
       "fundingExtraNote": "Co-funded infrastructure",
       "quirkHint": "Interim medium-sized shared research infrastructure scheme replacing LIEF.",
-      "officialUrl": "https://www.arc.gov.au/funding-research/applying-grant/new-ncgp-schemes-overview",
+      "officialUrl": "https://www.arc.gov.au/funding-research/applying-grant/new-ncgp-schemes-overview/collaborate-infrastructure-equipment-and-facilities-cief",
       "roles": [
         {
           "id": "lead-ci",
@@ -379,7 +379,7 @@
       "fundingMinAnnual": 200000,
       "fundingMaxAnnual": 600000,
       "quirkHint": "Centrepiece project scheme (~40% of NCGP budget) for all career stages.",
-      "officialUrl": "https://www.arc.gov.au/funding-research/applying-grant/new-ncgp-schemes-overview",
+      "officialUrl": "https://www.arc.gov.au/funding-research/applying-grant/new-ncgp-schemes-overview/breakthrough",
       "roles": [
         {
           "id": "lead-ci",
@@ -430,7 +430,7 @@
       "fundingMinAnnual": 4000000,
       "fundingMaxAnnual": 6000000,
       "quirkHint": "Two-stage EOI + Full process; Partner Organisation with strong cash focus; Ministerial approval.",
-      "officialUrl": "https://www.arc.gov.au/funding-research/applying-grant/new-ncgp-schemes-overview",
+      "officialUrl": "https://www.arc.gov.au/funding-research/applying-grant/new-ncgp-schemes-overview/prioritise",
       "roles": [
         {
           "id": "lead-ci-director",
