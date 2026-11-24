@@ -34,110 +34,146 @@ export function FundingRollupPanel({
   const [showMatrix, setShowMatrix] = useState(false);
   const peak = getPeakLoadSummary(loads);
 
+  const activeTrQuarters = loads.filter((l) => l.hasActiveTeachingRelief);
+  const blockedTrQuarters = activeTrQuarters.filter((l) => l.hasActiveSci);
+  const freeTrCount = activeTrQuarters.length - blockedTrQuarters.length;
+
+  const sciIssues = issues.filter((i) => i.code === 'sci-teaching-relief-conflict');
+  const otherIssues = issues.filter((i) => i.code !== 'sci-teaching-relief-conflict');
+
+  const sciAffectedLabels = sciIssues.map((i) => i.message.split(':')[0]?.trim()).filter(Boolean);
+  const sciOverlapSpan =
+    blockedTrQuarters.length > 1
+      ? `${formatQuarterShort(blockedTrQuarters[0].quarter)} to ${formatQuarterShort(
+          blockedTrQuarters[blockedTrQuarters.length - 1].quarter,
+        )}`
+      : blockedTrQuarters.length === 1
+        ? formatQuarterShort(blockedTrQuarters[0].quarter)
+        : '';
+
+  const overCapSpan =
+    peak.overCapQuarters.length > 1
+      ? `${formatQuarterShort(peak.overCapQuarters[0].quarter)} to ${formatQuarterShort(
+          peak.overCapQuarters[peak.overCapQuarters.length - 1].quarter,
+        )}`
+      : peak.overCapQuarters.length === 1
+        ? formatQuarterShort(peak.overCapQuarters[0].quarter)
+        : '';
+
+  const totalAlertCount =
+    (peak.overCapQuarters.length > 0 ? 1 : 0) +
+    (sciIssues.length > 0 ? 1 : 0) +
+    otherIssues.length;
+
+  let teachingReliefSummary: string;
+  let teachingReliefTone = 'text-slate-800';
+  if (rollup.fundedCount === 0) {
+    teachingReliefSummary = 'None';
+    teachingReliefTone = 'text-slate-500';
+  } else if (activeTrQuarters.length === 0 && rollup.hasSalariedRole) {
+    teachingReliefSummary = 'Salaried role (no CI teaching relief)';
+    teachingReliefTone = 'text-indigo-800';
+  } else if (activeTrQuarters.length === 0) {
+    teachingReliefSummary = 'None';
+    teachingReliefTone = 'text-slate-500';
+  } else if (blockedTrQuarters.length === 0) {
+    teachingReliefSummary = `Eligible (up to ${formatCurrencyAud(rules.teachingReliefMaxAnnual)}/yr)`;
+    teachingReliefTone = 'text-teal-800';
+  } else if (freeTrCount === 0) {
+    teachingReliefSummary = `Blocked in all ${blockedTrQuarters.length} active qtrs by SCI salary`;
+    teachingReliefTone = 'text-amber-800';
+  } else {
+    teachingReliefSummary = `Blocked in ${blockedTrQuarters.length} of ${activeTrQuarters.length} active qtrs by SCI (up to ${formatCurrencyAud(rules.teachingReliefMaxAnnual)}/yr otherwise)`;
+    teachingReliefTone = 'text-amber-800';
+  }
+
   return (
     <div className="space-y-3">
-      {/* Compact Single-Bar Summary Strip (Option A: zero duplicate Peak card, ~half vertical footprint) */}
-      <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-slate-200 rounded-lg border border-slate-200 bg-white shadow-xs overflow-hidden print-avoid-break">
-        {/* Segment 1: Indicative Funding Band */}
-        <div className="px-3.5 py-2.5">
-          <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-            <DollarSign className="h-3 w-3 text-slate-400" />
-            <span>Indicative Funding (If Funded)</span>
-          </div>
-          <div className="mt-0.5 flex flex-wrap items-baseline gap-x-2 tabular-nums">
-            <span className="font-mono text-sm font-semibold text-slate-900">
-              {rollup.annualFundingMax > 0
-                ? `${formatCurrencyAud(rollup.annualFundingMin)}-${formatCurrencyAud(rollup.annualFundingMax)}/yr`
-                : '$0/yr'}
-            </span>
-            {rollup.totalFundingMax > 0 && (
+      {/* Compact Single-Line Summary Bar (honest totals + teaching relief status, no 3-box grid) */}
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1.5 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs shadow-xs print-avoid-break">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 tabular-nums">
+          <span className="inline-flex items-center gap-1.5 text-slate-600">
+            <DollarSign className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+            <span>Project funding band (total):</span>
+            <strong className="font-mono text-slate-900">
+              {rollup.totalFundingMax > 0
+                ? `${formatCurrencyAud(rollup.totalFundingMin)}-${formatCurrencyAud(rollup.totalFundingMax)}`
+                : '$0'}
+            </strong>
+            {rollup.fundedCount > 0 && (
               <span className="text-[11px] text-slate-500">
-                {formatCurrencyAud(rollup.totalFundingMin)}-{formatCurrencyAud(rollup.totalFundingMax)}{' '}
-                total ({rollup.fundedCount} {rollup.fundedCount === 1 ? 'grant' : 'grants'})
+                across {rollup.fundedCount} funded {rollup.fundedCount === 1 ? 'grant' : 'grants'}
               </span>
             )}
-          </div>
+          </span>
+
+          <span className="hidden sm:inline text-slate-300">|</span>
+
+          <span className="inline-flex items-center gap-1.5 text-slate-600">
+            <span>Teaching relief:</span>
+            <strong className={`font-medium ${teachingReliefTone}`}>{teachingReliefSummary}</strong>
+          </span>
+
           {rollup.extraNotes.length > 0 && (
-            <div className="mt-0.5 text-[10px] text-slate-500 truncate" title={rollup.extraNotes.join(' · ')}>
-              {rollup.extraNotes.join(' · ')}
-            </div>
+            <>
+              <span className="hidden md:inline text-slate-300">|</span>
+              <span className="text-[11px] text-slate-500">{rollup.extraNotes.join(' · ')}</span>
+            </>
           )}
         </div>
 
-        {/* Segment 2: Teaching Relief & Salary */}
-        <div className="px-3.5 py-2.5">
-          <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-            Teaching Relief &amp; Salary
-          </div>
-          <div className="mt-0.5 flex flex-wrap items-baseline gap-x-2 tabular-nums">
-            <span className="font-mono text-sm font-semibold text-slate-900">
-              {rollup.annualTeachingReliefMax > 0
-                ? `Up to ${formatCurrencyAud(rollup.annualTeachingReliefMax)}/yr`
-                : rollup.hasSalariedRole
-                  ? 'Salaried (No TR)'
-                  : '$0/yr'}
-            </span>
-          </div>
-          <div className="mt-0.5 text-[11px] text-slate-500 leading-snug">
-            {rollup.hasTeachingReliefBlockedBySci ? (
-              <span className="font-medium text-amber-800">
-                SCI salary overlap blocks teaching relief in overlapping quarters.
-              </span>
-            ) : rollup.hasSalariedRole ? (
-              'Salaried role (cannot combine with CI teaching relief).'
-            ) : (
-              'Unsalaried CI / Lead CI eligible up to $50k/yr.'
-            )}
-          </div>
-        </div>
-
-        {/* Segment 3: Relinquishment & Cap Status */}
-        <div
-          className={`px-3.5 py-2.5 ${
-            peak.overCapQuarters.length > 0 ? 'bg-red-50/60' : ''
-          }`}
+        <span
+          title="ARC rule: active projects and roles cannot be relinquished early to free up Research Points."
+          className="inline-flex items-center gap-1 text-[11px] text-slate-500 shrink-0"
         >
-          <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-            {peak.overCapQuarters.length > 0 ? (
-              <AlertTriangle className="h-3 w-3 text-red-600" />
-            ) : (
-              <Lock className="h-3 w-3 text-slate-400" />
-            )}
-            <span>{peak.overCapQuarters.length > 0 ? 'Over Cap Warning' : 'Point Lock Rule'}</span>
-          </div>
-          {peak.overCapQuarters.length > 0 ? (
-            <div className="mt-0.5 text-[11px] font-semibold text-red-700 leading-snug tabular-nums">
-              Exceeds {rules.hardCap} pts in {peak.overCapQuarters.length} qtr
-              {peak.overCapQuarters.length === 1 ? '' : 's'} (
-              {peak.overCapQuarters
-                .slice(0, 3)
-                .map((q) => formatQuarterShort(q.quarter))
-                .join(', ')}
-              {peak.overCapQuarters.length > 3 ? '...' : ''}).
-            </div>
-          ) : (
-            <div className="mt-0.5 text-xs font-medium text-slate-800">
-              No early relinquishment
-            </div>
-          )}
-          <div className="mt-0.5 text-[11px] text-slate-500 leading-snug">
-            Active projects &amp; roles stay locked until project end date.
-          </div>
-        </div>
+          <Lock className="h-3 w-3 text-slate-400 shrink-0" />
+          <span>No early relinquishment</span>
+        </span>
       </div>
 
-      {/* Active Eligibility & Policy Alerts */}
-      {issues.length > 0 && (
+      {/* Grouped Eligibility, Cap & Policy Alerts (only rendered when issues exist) */}
+      {totalAlertCount > 0 && (
         <div
           role="status"
           className="rounded-lg border border-amber-300 bg-amber-50/70 px-3.5 py-2.5 space-y-1.5"
         >
           <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-950">
             <ShieldAlert className="h-4 w-4 text-amber-700" />
-            Eligibility &amp; Rule Alerts ({issues.length})
+            Plan Alerts ({totalAlertCount})
           </div>
-          <ul className="space-y-1 text-xs text-amber-900">
-            {issues.map((issue, idx) => (
+          <ul className="space-y-1 text-xs text-amber-950">
+            {peak.overCapQuarters.length > 0 && (
+              <li className="flex items-start gap-2 tabular-nums">
+                <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5 text-red-600" />
+                <span>
+                  <strong className="text-red-800">
+                    Exceeds {rules.hardCap}-point cap in {peak.overCapQuarters.length}{' '}
+                    {peak.overCapQuarters.length === 1 ? 'quarter' : 'quarters'}
+                  </strong>{' '}
+                  ({overCapSpan}; peak{' '}
+                  <strong className="font-mono text-red-800">
+                    {peak.peakPoints}/{rules.hardCap}
+                  </strong>
+                  {peak.peakQuarter ? ` in ${formatQuarterShort(peak.peakQuarter)}` : ''}). Toggle a
+                  planned grant to <strong>If Unfunded</strong> or adjust submission timing.
+                </span>
+              </li>
+            )}
+
+            {sciIssues.length > 0 && (
+              <li className="flex items-start gap-2 tabular-nums">
+                <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5 text-amber-700" />
+                <span>
+                  <strong>SCI salary overlaps CI teaching relief</strong> in{' '}
+                  {blockedTrQuarters.length}{' '}
+                  {blockedTrQuarters.length === 1 ? 'quarter' : 'quarters'} ({sciOverlapSpan})
+                  affecting {sciAffectedLabels.join(', ')}. Teaching relief cannot be claimed during
+                  quarters with an active SCI salary.
+                </span>
+              </li>
+            )}
+
+            {otherIssues.map((issue, idx) => (
               <li key={`${issue.grantId}-${issue.code}-${idx}`} className="flex items-start gap-2">
                 <AlertTriangle
                   className={`h-3.5 w-3.5 shrink-0 mt-0.5 ${

@@ -3,6 +3,7 @@ import {
   AlertTriangle,
   ArrowLeft,
   BookOpen,
+  Compass,
   Copy,
   GitCompareArrows,
   Info,
@@ -730,7 +731,7 @@ export default function App() {
               </h1>
             </div>
 
-            {/* Mobile compact point readout (< md) + Desktop Over-Cap alert ONLY when breaching cap */}
+            {/* Mobile compact point readout (< md) */}
             <div
               className={`inline-flex md:hidden items-center gap-1.5 rounded-full border px-2 py-0.5 font-mono text-[11px] tabular-nums whitespace-nowrap shrink-0 ${
                 peakSummary.overCapQuarters.length > 0
@@ -745,13 +746,6 @@ export default function App() {
                 <AlertTriangle className="h-3 w-3 text-red-700" />
               )}
             </div>
-
-            {peakSummary.overCapQuarters.length > 0 && (
-              <span className="hidden md:inline-flex items-center gap-1 rounded-full border border-red-300 bg-red-50 px-2.5 py-0.5 font-mono text-[11px] font-semibold text-red-800 tabular-nums whitespace-nowrap shrink-0">
-                <AlertTriangle className="h-3 w-3 text-red-700" />
-                Over Cap ({peakSummary.peakPoints}/{effectiveRules.hardCap})
-              </span>
-            )}
           </div>
 
           {/* Mobile Compact Actions (< md): + Add + Menu Toggle */}
@@ -1334,6 +1328,7 @@ export default function App() {
                     : 'border-transparent text-slate-500 hover:bg-slate-100/70 hover:text-slate-800'
                 }`}
               >
+                <Compass className="h-3.5 w-3.5 shrink-0" />
                 <span>What Fits?</span>
               </button>
               <button
@@ -1448,7 +1443,7 @@ export default function App() {
                   className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 font-mono text-[10px] font-medium text-slate-700 hover:border-slate-300 hover:bg-slate-100 hover:text-slate-950 arc-state-transition"
                 >
                   <GitHubIcon className="h-3 w-3 shrink-0" />
-                  <span>GitHub</span>
+                  <span>{effectiveRules.projectMeta.githubLabel}</span>
                 </a>
                 <span className="hidden sm:inline text-slate-300">|</span>
               </>

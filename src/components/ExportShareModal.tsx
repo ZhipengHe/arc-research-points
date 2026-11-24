@@ -5,6 +5,7 @@ import {
   Check,
   Copy,
   Download,
+  ExternalLink,
   FileImage,
   FileJson,
   Link2,
@@ -312,12 +313,35 @@ export function ExportShareModal({
         {/* 5. Browser-Agent Support (WebMCP) & Machine-Readable Endpoints */}
         <div className="md:col-span-2 rounded-lg border border-slate-200 bg-slate-50 p-3.5 space-y-2">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="font-semibold text-slate-900">
-              AI Agent Endpoints &amp; Browser-Native WebMCP
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="font-semibold text-slate-900">
+                AI Agent Endpoints &amp; Browser-Native WebMCP
+              </div>
+              <a
+                href="https://developer.chrome.com/docs/ai/webmcp"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-600 underline decoration-slate-300 hover:text-slate-950"
+              >
+                <span>WebMCP Docs</span>
+                <ExternalLink className="h-3 w-3 shrink-0" />
+              </a>
             </div>
-            {webMcpStatus.supported && (
-              <span className="rounded-full bg-emerald-100 px-2 py-0.5 font-mono text-[10px] font-semibold text-emerald-800">
-                WebMCP Active ({webMcpStatus.surface})
+            {webMcpStatus.supported ? (
+              <span
+                title={`Browser exposes ${webMcpStatus.surface}; ${webMcpStatus.toolNames.length} client tools registered.`}
+                className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 font-mono text-[10px] font-semibold text-emerald-800"
+              >
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-600" aria-hidden="true" />
+                WebMCP Ready ({webMcpStatus.surface})
+              </span>
+            ) : (
+              <span
+                title="This browser does not currently expose document.modelContext or navigator.modelContext (requires a WebMCP-enabled browser or Origin Trial flag)."
+                className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-0.5 font-mono text-[10px] font-medium text-slate-600"
+              >
+                <span className="h-1.5 w-1.5 rounded-full bg-slate-400" aria-hidden="true" />
+                WebMCP Unavailable in This Browser
               </span>
             )}
           </div>
