@@ -58,7 +58,21 @@
       "title": "New NCGP Schemes: Overview",
       "shortTitle": "NCGP Schemes Overview",
       "url": "https://www.arc.gov.au/funding-research/applying-grant/new-ncgp-schemes-overview",
-      "description": "Overview of the reformed National Competitive Grants Program scheme architecture, indicative schedule, and funding bands."
+      "description": "Overview of the 7 new NCGP schemes and 1 sub-scheme (CIEF), indicative schedule, and funding bands."
+    },
+    {
+      "id": "ncgp-faq",
+      "title": "Revitalised NCGP: FAQ & Information Webinar",
+      "shortTitle": "Revitalised NCGP FAQ",
+      "url": "https://www.arc.gov.au/funding-research/applying-grant/national-competitive-grants-program/revitalised-ncgp-faq",
+      "description": "Comprehensive ARC Q&A and August 2026 webinar recording covering transition timelines, legacy grants, eligibility, and Research Points."
+    },
+    {
+      "id": "ncgp-changes",
+      "title": "Changes to the NCGP (Revitalised Program)",
+      "shortTitle": "Changes to the NCGP",
+      "url": "https://www.arc.gov.au/funding-research/applying-grant/national-competitive-grants-program/revitalised-program-australias-research-future-changes-ncgp",
+      "description": "Official ARC summary of the revitalised NCGP reform architecture and transition from legacy Discovery and Linkage schemes."
     },
     {
       "id": "policy-review-report",
@@ -69,11 +83,18 @@
       "description": "Final policy review report establishing the NCGP redesign recommendations and transition timeline."
     },
     {
-      "id": "gog-hub",
-      "title": "Grant Opportunity Guidelines Hub",
-      "shortTitle": "Grant Guidelines Hub",
-      "url": "https://www.arc.gov.au/manage-your-grant/grant-opportunity-guidelines",
-      "description": "Authoritative source for binding Grant Opportunity Guidelines for each open round."
+      "id": "grantconnect",
+      "title": "GrantConnect (Binding Grant Guidelines & Forecasts)",
+      "shortTitle": "GrantConnect",
+      "url": "https://www.arc.gov.au/funding-research/grantconnect",
+      "description": "ARC guide to GrantConnect (grants.gov.au), where all binding Grant Opportunity Guidelines, addenda, and Forecast Opportunities are published."
+    },
+    {
+      "id": "rms-portal",
+      "title": "ARC Research Management System (RMS)",
+      "shortTitle": "ARC RMS Portal",
+      "url": "https://rms.arc.gov.au/",
+      "description": "Official ARC portal for submitting applications and checking your authoritative live Research Points balance."
     }
   ],
   "schemes": [

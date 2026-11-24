@@ -63,8 +63,11 @@ Edit [`public/rules.json`](public/rules.json):
 
 - [ARC Research Points (Primary Rules)](https://www.arc.gov.au/research-points)
 - [New NCGP Schemes: Overview](https://www.arc.gov.au/funding-research/applying-grant/new-ncgp-schemes-overview)
+- [Revitalised NCGP: FAQ & Information Webinar](https://www.arc.gov.au/funding-research/applying-grant/national-competitive-grants-program/revitalised-ncgp-faq)
+- [Changes to the NCGP (Revitalised Program)](https://www.arc.gov.au/funding-research/applying-grant/national-competitive-grants-program/revitalised-program-australias-research-future-changes-ncgp)
 - [NCGP Policy Review Final Report (July 2026)](https://www.arc.gov.au/news-and-publications/publications/ncgp-review-final-report) ([Direct PDF](https://www.arc.gov.au/system/files/2026-07/ncgp-policy-review_finalreport-20262207_0.pdf))
-- [Grant Opportunity Guidelines Hub](https://www.arc.gov.au/manage-your-grant/grant-opportunity-guidelines)
+- [GrantConnect (Binding Grant Guidelines & Forecasts)](https://www.arc.gov.au/funding-research/grantconnect)
+- [ARC Research Management System (RMS)](https://rms.arc.gov.au/)
 
 ## Author & License
 

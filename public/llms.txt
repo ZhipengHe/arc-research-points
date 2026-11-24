@@ -1,10 +1,34 @@
 # ARC NCGP Research Points Planner (13-Point System)
 
-> Static client-side planning workbench for Australian researchers modelling multi-year grant pipelines under the Australian Research Council (ARC) National Competitive Grants Program (NCGP) 13-point system. Unofficial tool; rules verified November 2026.
+> Static, zero-backend client-side planning workbench for Australian researchers modelling multi-year grant pipelines under the Australian Research Council (ARC) National Competitive Grants Program (NCGP) 13-point system (2027-2032). Unofficial tool; rules verified November 2026. All user data stays in browser `localStorage` with zero server storage.
 
 ## Structured Data
 
-- [rules.json](/rules.json): Complete machine-readable definitions of all NCGP schemes, point weights, indicative launch windows, durations, funding bands, eligibility rules, legacy 0-point schemes, and official ARC URLs.
+- [rules.json](/rules.json): Complete machine-readable definitions of all 8 NCGP schemes, 4 legacy 0-point schemes, role point weights, indicative launch windows, durations, funding bands, eligibility cutoffs, changelog, and official ARC URLs.
+
+## How to Use This Website
+
+1. **Build Your Grant Pipeline (2027-2032):** Click `+ Add Grant` (or the inline `+ Add a grant or legacy project...` row) to add planned NCGP bids, already-awarded NCGP grants (locked in RMS with no pending phase), or 0-point legacy ARC grants (`DP`, `LP`, `DECRA`, `FT`). Default labels stay generic (e.g. `Explore #1`) so unpublished titles never need to be entered.
+2. **Stress-Test Plan A vs. Plan B:** Click any `If Funded` / `If Unfunded` pill in a grant row to toggle whether that bid locks points through its project end date or releases points on its outcome announcement date.
+3. **Check Remaining Capacity (`What Fits?` tab):** Click any quarter column (`Q1 2027` to `Q4 2032`) on the timeline or capacity bar chart. The `What Fits?` tab lists every valid scheme + role combination within your free point balance, with filters for eligibility and multi-year cap breaches, plus 1-click `+ Add`.
+4. **Compare Scenarios & Templates:** Use the scenario tabs (`+ New Scenario`, duplicate, rename) and `Compare` modal to inspect side-by-side quarterly load heatmaps, or load starter plans via `Templates` (`Fresh Postdoc / ECR`, `Mid-Career Researcher`, `Senior Lead`).
+5. **Check Eligibility Cutoffs (`Eligibility`):** Enter PhD conferral date and career interruption months to draw the 5-year ECR cutoff line (when inside 2027-2032) and flag ineligible roles (`Initiate`, `SCI (ECR)`). Enable `Aboriginal and Torres Strait Islander Researcher` to unlock `Indigenous Excellence` / `SCI (MCR)` and plot the 15-year post-PhD cutoff line.
+6. **Check Collaborator Headroom (`Team / Co-CI` tab & `Profile:` switcher):** Add any number of Co-CI profiles manually or via a colleague's Shareable URL (`Import Link`). Pick one of your planned bids and the Co-CI's role to inspect their 2027-2032 visual overlap chart, add/edit their grants with the full Grant Modal, or click `Full timeline` (or the Row 2 `Profile:` bar) to inspect their complete workbench.
+7. **Override Rules or Export (`Rules` & `Export / AI`):** Locally override the 13-point cap, role weights, or launch quarters for hypothetical testing; export slide-ready PNGs, Print/PDF layouts, `.ics` calendars, JSON backups, privacy-safe `#plan=...` share URLs (auto-stripping custom titles by default), or copy Markdown/JSON summaries for AI assistants.
+
+## AI Agent Integration (WebMCP & Browser Automation)
+
+In WebMCP-enabled browsers exposing `document.modelContext` or `navigator.modelContext`, this app automatically registers 7 client-side tools (check live browser readiness under `Export / AI` -> `AI Agent Endpoints & Browser-Native WebMCP`):
+
+- `get_current_plan` (read-only): Returns active profile, scenario, grants, 2027-2032 quarterly point loads, peak load, over-cap quarters, funding roll-up, and eligibility issues.
+- `get_rules` (read-only): Returns active `rules.json` configuration (including any local custom overrides).
+- `find_fitting_roles` (read-only, `{ quarter?: "YYYY-Q1..Q4" }`): Lists valid scheme + role options that fit remaining points in the target quarter.
+- `add_grant` (`{ schemeId, roleId, submissionQuarter?, durationYears?, outcome?, isAwarded?, label? }`): Adds an NCGP or `legacy-*` grant to the active scenario.
+- `remove_grant` (`{ grantId }`): Removes a grant by ID.
+- `toggle_funded_status` (`{ grantId, outcome?: "funded" | "unsuccessful" }`): Toggles or sets a grant's modelled outcome.
+- `switch_scenario` (`{ scenario }`): Switches the active scenario tab by ID or name.
+
+Browser agents without WebMCP can operate the UI directly through standard ARIA landmarks, buttons, `<dialog>` modals, and form controls, or read `/rules.json` directly.
 
 ## Core ARC 13-Point Rules (Verified Nov 2026)
 
@@ -35,6 +59,9 @@
 
 - [ARC Research Points (Primary Rules)](https://www.arc.gov.au/research-points)
 - [New NCGP Schemes: Overview](https://www.arc.gov.au/funding-research/applying-grant/new-ncgp-schemes-overview)
+- [Revitalised NCGP: FAQ & Information Webinar](https://www.arc.gov.au/funding-research/applying-grant/national-competitive-grants-program/revitalised-ncgp-faq)
+- [Changes to the NCGP (Revitalised Program)](https://www.arc.gov.au/funding-research/applying-grant/national-competitive-grants-program/revitalised-program-australias-research-future-changes-ncgp)
 - [NCGP Policy Review Final Report (July 2026)](https://www.arc.gov.au/news-and-publications/publications/ncgp-review-final-report)
 - [NCGP Policy Review Final Report Direct PDF](https://www.arc.gov.au/system/files/2026-07/ncgp-policy-review_finalreport-20262207_0.pdf)
-- [Grant Opportunity Guidelines Hub](https://www.arc.gov.au/manage-your-grant/grant-opportunity-guidelines)
+- [GrantConnect (Binding Grant Guidelines & Forecasts)](https://www.arc.gov.au/funding-research/grantconnect)
+- [ARC Research Management System (RMS)](https://rms.arc.gov.au/)
