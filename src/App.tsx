@@ -12,6 +12,7 @@ import {
   Monitor,
   Pencil,
   Plus,
+  RotateCcw,
   Share2,
   SlidersHorizontal,
   Sparkles,
@@ -50,7 +51,8 @@ import {
   createId,
   type StarterTemplateDefinition,
 } from './engine/templates';
-import { loadWorkspaceState, saveWorkspaceState } from './utils/storage';
+import { exportWorkspaceJson, loadWorkspaceState, saveWorkspaceState } from './utils/storage';
+import { exportTimelinePng, triggerFileDownload } from './utils/exportTools';
 import { decodeShareHash, type SharedPlanPayload } from './utils/shareLink';
 import { registerWebMcpTools, type WebMcpRegistrationStatus, WEBMCP_TOOL_NAMES } from './utils/webmcp';
 import { TimelineAndCapacity } from './components/TimelineAndCapacity';
@@ -77,6 +79,11 @@ export default function App() {
   const [editingGrant, setEditingGrant] = useState<GrantEntry | null>(null);
   const [grantModalTargetProfileId, setGrantModalTargetProfileId] = useState<string | null>(null);
   const [rightTab, setRightTab] = useState<'what-fits' | 'team'>('what-fits');
+  const [timelineExpanded, setTimelineExpanded] = useState(false);
+  const [undoSnapshot, setUndoSnapshot] = useState<{
+    label: string;
+    workspace: PersistedWorkspaceState;
+  } | null>(null);
   const [eligibilityOpen, setEligibilityOpen] = useState(false);
   const [templatesOpen, setTemplatesOpen] = useState(false);
   const [compareOpen, setCompareOpen] = useState(false);
@@ -322,7 +329,50 @@ export default function App() {
     });
   };
 
+  const captureUndo = useCallback(
+    (label: string) => {
+      if (!workspace) return;
+      setUndoSnapshot({
+        label,
+        workspace: JSON.parse(JSON.stringify(workspace)) as PersistedWorkspaceState,
+      });
+    },
+    [workspace],
+  );
+
+  const handleUndo = () => {
+    if (!undoSnapshot) return;
+    setWorkspace(undoSnapshot.workspace);
+    setUndoSnapshot(null);
+  };
+
+  const handleQuickBackupJson = () => {
+    if (!workspace) return;
+    const json = exportWorkspaceJson(workspace);
+    triggerFileDownload(
+      `arc-points-workspace-${new Date().toISOString().slice(0, 10)}.json`,
+      json,
+      'application/json;charset=utf-8',
+    );
+  };
+
+  const handleQuickDownloadPng = () => {
+    if (!effectiveRules || !activeProfile || !activeScenario) return;
+    exportTimelinePng({
+      profile: activeProfile,
+      scenario: activeScenario,
+      rules: effectiveRules,
+      loads: quarterlyLoads,
+    });
+  };
+
+  const handleQuickPrintPdf = () => {
+    window.print();
+  };
+
   const handleDeleteScenario = (scenarioId: string) => {
+    const targetName = activeProfile?.scenarios.find((s) => s.id === scenarioId)?.name ?? 'scenario';
+    captureUndo(`Deleted "${targetName}"`);
     updateActiveProfile((profile) => {
       if (profile.scenarios.length <= 1) return profile;
       const nextList = profile.scenarios.filter((s) => s.id !== scenarioId);
@@ -352,6 +402,9 @@ export default function App() {
     template: StarterTemplateDefinition,
     mode: 'new-scenario' | 'replace',
   ) => {
+    if (mode === 'replace') {
+      captureUndo(`Replaced scenario with "${template.name}"`);
+    }
     const built = buildScenarioFromTemplate(template);
     updateActiveProfile((profile) => {
       const nextEligibility =
@@ -422,6 +475,8 @@ export default function App() {
   };
 
   const handleRemoveCollaborator = (profileId: string) => {
+    const removedName = workspace?.profiles.find((p) => p.id === profileId)?.name ?? 'collaborator';
+    captureUndo(`Removed ${removedName}`);
     setWorkspace((prev) => {
       if (!prev) return prev;
       const nextProfiles = prev.profiles.filter((p) => p.id !== profileId || p.isPrimary);
@@ -517,6 +572,7 @@ export default function App() {
   };
 
   const handleStartBlank = () => {
+    captureUndo('Cleared scenario');
     updateActiveScenario((scenario) => ({
       ...scenario,
       name: scenario.id === 'scen-baseline' ? 'Plan A' : scenario.name,
@@ -721,10 +777,10 @@ export default function App() {
           {/* Brand + Live 13-Point Counter */}
           <div className="flex items-center gap-2 min-w-0">
             <div className="flex items-center gap-2 min-w-0">
-              <BrandMark className="h-7 w-7" />
+              <BrandMark className="h-7 w-7 sm:h-8 sm:w-8" />
               <h1
                 title="ARC NCGP Research Points Planner"
-                className="truncate text-sm font-semibold tracking-tight text-slate-900"
+                className="truncate text-[15px] sm:text-base font-bold tracking-tight text-slate-900"
               >
                 <span className="hidden sm:inline">ARC NCGP Points Planner</span>
                 <span className="sm:hidden">ARC Points</span>
@@ -958,11 +1014,11 @@ export default function App() {
           </div>
         )}
 
-        {/* Scenario Tabs & Unofficial Disclaimer Strip */}
+        {/* Scenario Tabs & Profile Strip */}
         <div className="border-t border-slate-200 bg-slate-50/70">
-          <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-2 px-3.5 py-1.5 text-xs">
-            {/* Horizontally scrollable Scenario Tabs on mobile */}
-            <div className="flex items-center gap-1 overflow-x-auto max-w-full pb-0.5 sm:pb-0">
+          <div className="mx-auto flex max-w-[1600px] flex-nowrap items-center justify-between gap-2 px-3.5 py-1.5 text-xs">
+            {/* Horizontally scrollable Scenario Tabs */}
+            <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto pb-0.5 sm:pb-0">
               {activeProfile.scenarios.map((s) => {
                 const isActive = s.id === activeScenario.id;
                 const isRenaming = renamingScenarioId === s.id;
@@ -1053,14 +1109,14 @@ export default function App() {
               </button>
             </div>
 
-            {/* Right side of Scenario Strip: Profile Switcher (when Co-CIs exist) */}
+            {/* Right side of Scenario Strip: Profile Switcher (compact select on tablet or >4 profiles, pills on xl+) */}
             {workspace.profiles.length > 1 && (
               <div className="no-print hidden md:flex items-center gap-1.5 shrink-0">
                 <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
                   Profile:
                 </span>
-                {workspace.profiles.length <= 4 ? (
-                  <div className="inline-flex items-center gap-0.5 rounded-md border border-slate-200 bg-white p-0.5 text-[11px]">
+                {workspace.profiles.length <= 4 && (
+                  <div className="hidden xl:inline-flex items-center gap-0.5 rounded-md border border-slate-200 bg-white p-0.5 text-[11px]">
                     {workspace.profiles.map((p) => (
                       <button
                         key={p.id}
@@ -1078,24 +1134,25 @@ export default function App() {
                       </button>
                     ))}
                   </div>
-                ) : (
-                  <select
-                    aria-label="Active researcher profile"
-                    value={workspace.activeProfileId}
-                    onChange={(e) =>
-                      setWorkspace((prev) =>
-                        prev ? { ...prev, activeProfileId: e.target.value } : prev,
-                      )
-                    }
-                    className="rounded-md border border-slate-300 bg-white px-2 py-0.5 text-[11px] font-medium text-slate-800 cursor-pointer"
-                  >
-                    {workspace.profiles.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
-                      </option>
-                    ))}
-                  </select>
                 )}
+                <select
+                  aria-label="Active researcher profile"
+                  value={workspace.activeProfileId}
+                  onChange={(e) =>
+                    setWorkspace((prev) =>
+                      prev ? { ...prev, activeProfileId: e.target.value } : prev,
+                    )
+                  }
+                  className={`${
+                    workspace.profiles.length <= 4 ? 'xl:hidden' : ''
+                  } rounded-md border border-slate-300 bg-white px-2 py-0.5 text-[11px] font-medium text-slate-800 cursor-pointer`}
+                >
+                  {workspace.profiles.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
               </div>
             )}
           </div>
@@ -1104,8 +1161,11 @@ export default function App() {
 
       {/* Main Workbench Content */}
       <main className="mx-auto w-full max-w-[1600px] flex-1 px-3.5 py-3 space-y-3">
-        {/* Gentle Dismissible Desktop Recommendation on Narrow Phones (< sm) */}
-        {!mobileTipDismissed && (
+        {/* Gentle Dismissible Desktop Recommendation on Narrow Phones (< sm; hidden while sample banner is shown to avoid stacked banners) */}
+        {!mobileTipDismissed &&
+          !(!sampleNoticeDismissed &&
+            activeScenario.id === 'scen-baseline' &&
+            activeScenario.grants.length > 0) && (
           <div className="no-print sm:hidden flex items-start justify-between gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] text-slate-600 shadow-2xs">
             <div className="flex items-start gap-2">
               <Monitor className="h-3.5 w-3.5 text-slate-500 shrink-0 mt-0.5" />
@@ -1275,7 +1335,11 @@ export default function App() {
           )}
 
         {/* Primary Desktop Horizontal Workbench Grid */}
-        <div className="print-full-width grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_350px] gap-3 items-start">
+        <div
+          className={`print-full-width grid grid-cols-1 gap-3 items-start ${
+            timelineExpanded ? '' : 'xl:grid-cols-[minmax(0,1fr)_350px]'
+          }`}
+        >
           {/* Left / Main Stage: Synchronized Timeline + Capacity Chart + Funding Rollup */}
           <div className="min-w-0 space-y-3">
             <TimelineAndCapacity
@@ -1300,6 +1364,10 @@ export default function App() {
                 setEditingGrant(null);
                 setGrantModalOpen(true);
               }}
+              isExpanded={timelineExpanded}
+              onToggleExpand={() => setTimelineExpanded((v) => !v)}
+              onDownloadPng={handleQuickDownloadPng}
+              onPrintPdf={handleQuickPrintPdf}
             />
 
             <FundingRollupPanel
@@ -1450,6 +1518,14 @@ export default function App() {
             )}
 
             <div className="flex items-center gap-2.5">
+              <button
+                type="button"
+                onClick={handleQuickBackupJson}
+                title="Download a local JSON backup of all scenarios, Co-CIs, and settings"
+                className="font-medium text-slate-600 hover:text-slate-950 underline decoration-slate-300 cursor-pointer"
+              >
+                Backup JSON
+              </button>
               <a
                 href="./rules.json"
                 target="_blank"
@@ -1567,7 +1643,34 @@ export default function App() {
         open={docsDrawerOpen}
         onClose={() => setDocsDrawerOpen(false)}
         rules={baseRules}
+        onDownloadBackup={handleQuickBackupJson}
       />
+
+      {/* 1-Step Undo Toast after destructive actions (Start Blank, Delete Scenario, Replace Template, Remove Co-CI) */}
+      {undoSnapshot && (
+        <div
+          role="status"
+          className="no-print fixed bottom-4 right-4 z-40 flex items-center gap-2.5 rounded-lg border border-slate-700 bg-slate-900 px-3.5 py-2 text-xs text-white shadow-lg"
+        >
+          <span>{undoSnapshot.label}</span>
+          <button
+            type="button"
+            onClick={handleUndo}
+            className="inline-flex items-center gap-1 rounded bg-white px-2 py-0.5 text-[11px] font-semibold text-slate-900 hover:bg-slate-100 cursor-pointer"
+          >
+            <RotateCcw className="h-3 w-3" />
+            Undo
+          </button>
+          <button
+            type="button"
+            onClick={() => setUndoSnapshot(null)}
+            aria-label="Dismiss undo notification"
+            className="rounded p-0.5 text-slate-400 hover:text-white cursor-pointer"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
     </div>
   );
 }

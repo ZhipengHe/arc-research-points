@@ -1,4 +1,4 @@
-import { BookOpen, ExternalLink, FileText, Lock, ShieldAlert } from 'lucide-react';
+import { BookOpen, Download, ExternalLink, FileText, Lock, ShieldAlert } from 'lucide-react';
 import type { RulesData } from '../types/arc';
 import { GitHubIcon } from './BrandMark';
 import { ModalDialog } from './ModalDialog';
@@ -7,9 +7,15 @@ interface OfficialDocsDrawerProps {
   open: boolean;
   onClose: () => void;
   rules: RulesData;
+  onDownloadBackup?: () => void;
 }
 
-export function OfficialDocsDrawer({ open, onClose, rules }: OfficialDocsDrawerProps) {
+export function OfficialDocsDrawer({
+  open,
+  onClose,
+  rules,
+  onDownloadBackup,
+}: OfficialDocsDrawerProps) {
   return (
     <ModalDialog
       open={open}
@@ -137,6 +143,21 @@ export function OfficialDocsDrawer({ open, onClose, rules }: OfficialDocsDrawerP
               links strip custom titles automatically by default.
             </li>
           </ul>
+          {onDownloadBackup && (
+            <div className="pt-1.5 flex items-center justify-between gap-2 border-t border-slate-100">
+              <span className="text-[11px] text-slate-500">
+                Save a local JSON copy before clearing browser site data.
+              </span>
+              <button
+                type="button"
+                onClick={onDownloadBackup}
+                className="inline-flex items-center gap-1 rounded border border-slate-300 bg-white px-2 py-1 text-[11px] font-medium text-slate-800 hover:bg-slate-50 cursor-pointer shrink-0"
+              >
+                <Download className="h-3 w-3" />
+                Backup JSON
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Open Source & Author */}
@@ -166,9 +187,10 @@ export function OfficialDocsDrawer({ open, onClose, rules }: OfficialDocsDrawerP
                 className="font-medium text-slate-900 underline decoration-slate-300 hover:text-teal-800"
               >
                 {rules.projectMeta.authorName}
-              </a>
-              . Inspect or suggest updates to <code className="font-mono">rules.json</code> on
-              GitHub as ARC publishes final Grant Opportunity Guidelines.
+              </a>{' '}
+              with Gemini 4 Neon. Inspect or suggest updates to{' '}
+              <code className="font-mono">rules.json</code> on GitHub as ARC publishes final Grant
+              Opportunity Guidelines.
             </p>
           </div>
         )}

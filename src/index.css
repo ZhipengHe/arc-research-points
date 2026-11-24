@@ -188,13 +188,14 @@ dialog.arc-dialog::backdrop {
   }
 }
 
+/* Top-level @page rule so Chrome, Edge, and Firefox default Save-as-PDF to Landscape */
+@page {
+  size: A4 landscape;
+  margin: 10mm;
+}
+
 /* Clean print / Save as PDF layout */
 @media print {
-  @page {
-    size: landscape;
-    margin: 10mm;
-  }
-
   body {
     background: #ffffff !important;
     color: #0f172a !important;

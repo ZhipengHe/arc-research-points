@@ -73,4 +73,4 @@ Edit [`public/rules.json`](public/rules.json):
 
 ## Author & License
 
-Built by [Zhipeng He](https://zhipenghe.me/). Released under the [MIT License](LICENSE).
+Built by [Zhipeng He](https://zhipenghe.me/) with Gemini 4 Neon. Released under the [MIT License](LICENSE).
