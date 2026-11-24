@@ -1,0 +1,41 @@
+# Automated version updates. Three layers of defense:
+#   1. Dependabot security advisories surface CVEs immediately (separate channel;
+#      automated security fixes are enabled at the repo level).
+#   2. Monthly version-update cadence batches transitive churn into a small
+#      sweep instead of weekly noise.
+#   3. Cooldown windows let fresh releases age before adoption, limiting exposure
+#      to supply-chain attacks on newly published versions
+#      (e.g. tj-actions/changed-files 2024, shai-hulud npm worm 2024, rspack 2025).
+#      Tiered: patches soak 3 days, minors 7, majors 14. Security PRs bypass
+#      cooldown so known-CVE fixes still land immediately.
+#
+# GitHub Actions ecosystem does NOT support cooldown. Pin actions by full commit
+# SHA with a trailing `# vX.Y.Z` comment in workflow files and review each
+# upgrade PR manually before merging.
+#
+# Ecosystems covered: github-actions and npm (reads package.json + pnpm-lock.yaml).
+version: 2
+updates:
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'monthly'
+
+  - package-ecosystem: 'npm'
+    directory: '/'
+    schedule:
+      interval: 'monthly'
+      day: 'monday'
+    open-pull-requests-limit: 5
+    cooldown:
+      default-days: 7
+      semver-major-days: 14
+      semver-minor-days: 7
+      semver-patch-days: 3
+    groups:
+      runtime-deps:
+        dependency-type: 'production'
+        update-types: ['minor', 'patch']
+      dev-deps:
+        dependency-type: 'development'
+        update-types: ['minor', 'patch']
