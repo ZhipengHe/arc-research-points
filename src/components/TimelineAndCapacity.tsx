@@ -59,6 +59,7 @@ export function TimelineAndCapacity({
   onOpenAddGrant,
 }: TimelineAndCapacityProps) {
   const [hoveredQuarter, setHoveredQuarter] = useState<QuarterKey | null>(null);
+  const [mobileView, setMobileView] = useState<'cards' | 'gantt'>('cards');
 
   const activeQuarter = hoveredQuarter ?? selectedQuarter;
   const activeLoad = loads.find((l) => l.quarter === activeQuarter) ?? loads[0];
@@ -168,9 +169,338 @@ export function TimelineAndCapacity({
         </div>
       </div>
 
-      {/* Scrollable Horizontal Synchronized Grid */}
+      {/* Mobile-First View (< md): Full-width touch cards + Full-width scrollable capacity chart (with optional Gantt toggle) */}
+      <div className="md:hidden">
+        {/* Mobile View Toggle */}
+        <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50/50 px-3 py-2 text-xs">
+          <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-600">
+            Pipeline ({grants.length})
+          </span>
+          <div className="inline-flex rounded-md border border-slate-300 bg-white p-0.5 text-[11px]">
+            <button
+              type="button"
+              onClick={() => setMobileView('cards')}
+              className={`rounded px-2.5 py-1 font-medium cursor-pointer ${
+                mobileView === 'cards' ? 'bg-slate-900 text-white' : 'text-slate-600'
+              }`}
+            >
+              Cards + Chart
+            </button>
+            <button
+              type="button"
+              onClick={() => setMobileView('gantt')}
+              className={`rounded px-2.5 py-1 font-medium cursor-pointer ${
+                mobileView === 'gantt' ? 'bg-slate-900 text-white' : 'text-slate-600'
+              }`}
+            >
+              Swipe Gantt
+            </button>
+          </div>
+        </div>
+
+        {mobileView === 'cards' && (
+          <>
+            {/* Mobile Full-Width Scrollable Capacity Bar Chart (no 308px side column!) */}
+            <div className="border-b border-slate-200 bg-slate-50/40 px-3 pt-2.5 pb-2">
+              <div className="mb-1.5 flex items-center justify-between text-[11px]">
+                <span className="font-semibold uppercase tracking-wide text-slate-600">
+                  Quarterly Load (swipe &amp; tap)
+                </span>
+                <span className="font-mono text-slate-700 tabular-nums">
+                  Peak{' '}
+                  <strong className={peakPoints > rules.hardCap ? 'text-red-700' : 'text-slate-900'}>
+                    {peakPoints}/{rules.hardCap}
+                  </strong>
+                </span>
+              </div>
+              <div className="overflow-x-auto pb-1">
+                <div className="min-w-[640px] pt-5">
+                  <div className="relative h-32">
+                    <div
+                      aria-hidden="true"
+                      style={{ bottom: `${capLineBottomPct}%` }}
+                      className="pointer-events-none absolute inset-x-0 z-10 border-t-[1.5px] border-dashed border-red-600"
+                    >
+                      <span className="absolute -top-4 right-1 rounded bg-red-600 px-1 py-0.5 font-mono text-[9px] font-semibold text-white tabular-nums">
+                        {rules.hardCap}-pt cap
+                      </span>
+                    </div>
+                    {ecrFraction !== null && (
+                      <div
+                        aria-hidden="true"
+                        style={{ left: `${ecrFraction * 100}%` }}
+                        className="pointer-events-none absolute inset-y-0 z-10 border-l-2 border-dashed border-violet-600/70"
+                      >
+                        <span className="absolute -top-4 left-1 whitespace-nowrap rounded bg-violet-50/95 px-1 py-0.5 text-[9px] font-semibold text-violet-800 border border-violet-200 leading-none">
+                          ECR 5yr
+                        </span>
+                      </div>
+                    )}
+                    <div className="grid h-full grid-cols-24">
+                      {loads.map((load) => {
+                        const isSelected = load.quarter === selectedQuarter;
+                        const totalPct = Math.min(100, (load.totalPoints / chartMaxPoints) * 100);
+                        const activeShare =
+                          load.totalPoints > 0 ? (load.activePoints / load.totalPoints) * 100 : 0;
+                        const pendingShare =
+                          load.totalPoints > 0 ? (load.pendingPoints / load.totalPoints) * 100 : 0;
+                        return (
+                          <button
+                            key={load.quarter}
+                            type="button"
+                            onClick={() => onSelectQuarter(load.quarter)}
+                            aria-label={`${formatQuarterShort(load.quarter)}: ${load.totalPoints} of ${rules.hardCap} points`}
+                            className={`flex h-full flex-col justify-end items-center border-r border-slate-100 last:border-r-0 px-[2px] cursor-pointer ${
+                              isSelected
+                                ? 'bg-slate-200/80'
+                                : load.isOverCap
+                                  ? 'bg-red-50/50'
+                                  : ''
+                            }`}
+                          >
+                            <span
+                              className={`mb-0.5 font-mono text-[9px] leading-none tabular-nums ${
+                                load.isOverCap
+                                  ? 'font-bold text-red-700'
+                                  : load.totalPoints > 0
+                                    ? 'font-semibold text-slate-700'
+                                    : 'text-slate-300'
+                              }`}
+                            >
+                              {load.totalPoints}
+                            </span>
+                            {load.totalPoints > 0 && (
+                              <div
+                                style={{ height: `${totalPct}%` }}
+                                className="flex w-full flex-col justify-end arc-bar-transition"
+                              >
+                                {load.pendingPoints > 0 && (
+                                  <div
+                                    style={{ height: `${pendingShare}%` }}
+                                    className={`w-full rounded-t-[2px] ${
+                                      load.isOverCap
+                                        ? 'bg-red-400 border border-red-600'
+                                        : 'bg-pending-bar-stripes border border-amber-600/60'
+                                    }`}
+                                  />
+                                )}
+                                {load.activePoints > 0 && (
+                                  <div
+                                    style={{ height: `${activeShare}%` }}
+                                    className={`w-full ${
+                                      load.pendingPoints === 0 ? 'rounded-t-[2px]' : ''
+                                    } ${load.isOverCap ? 'bg-red-600' : 'bg-teal-700'}`}
+                                  />
+                                )}
+                              </div>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  {/* Quarter axis labels below mobile bars */}
+                  <div className="mt-1 grid grid-cols-24 border-t border-slate-200 pt-1">
+                    {loads.map((load) => {
+                      const { year, q } = parseQuarter(load.quarter);
+                      const isSelected = load.quarter === selectedQuarter;
+                      return (
+                        <button
+                          key={load.quarter}
+                          type="button"
+                          onClick={() => onSelectQuarter(load.quarter)}
+                          className={`text-center font-mono text-[9px] tabular-nums cursor-pointer rounded py-0.5 ${
+                            isSelected
+                              ? 'bg-slate-900 text-white font-bold'
+                              : q === 1
+                                ? 'text-slate-800 font-semibold'
+                                : 'text-slate-400'
+                          }`}
+                        >
+                          {q === 1 ? `'${String(year).slice(2)}` : `Q${q}`}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Mobile Touch-Friendly Grant Cards */}
+            {grants.length === 0 ? (
+              <div className="p-5 text-center text-xs text-slate-500 space-y-2.5">
+                <p>Empty pipeline (0 / {rules.hardCap} pts).</p>
+                <button
+                  type="button"
+                  onClick={onOpenAddGrant}
+                  className="inline-flex items-center gap-1 rounded-md bg-slate-900 px-3.5 py-2 font-semibold text-white cursor-pointer"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Add your first grant
+                </button>
+              </div>
+            ) : (
+              <div className="divide-y divide-slate-100">
+                {grants.map((grant) => {
+                  const scheme = grant.isLegacy
+                    ? getLegacySchemeById(rules, grant.schemeId)
+                    : getSchemeById(rules, grant.schemeId);
+                  const fullScheme = !grant.isLegacy
+                    ? getSchemeById(rules, grant.schemeId)
+                    : undefined;
+                  const role = grant.isLegacy
+                    ? undefined
+                    : getRoleById(rules, grant.schemeId, grant.roleId);
+                  const pts = getGrantPoints(grant, rules);
+                  const endQuarter = getGrantEndQuarter(grant);
+                  const grantIssues = issuesByGrant.get(grant.id) ?? [];
+
+                  return (
+                    <div key={grant.id} className="p-3 space-y-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <span
+                              className={`text-xs font-semibold ${
+                                grant.outcome === 'unsuccessful' && !grant.isLegacy && !grant.isAwarded
+                                  ? 'text-slate-400 line-through'
+                                  : 'text-slate-900'
+                              }`}
+                            >
+                              {grant.label}
+                            </span>
+                            <span
+                              className={`rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold tabular-nums ${
+                                grant.isLegacy
+                                  ? 'bg-slate-100 text-slate-600'
+                                  : grant.outcome === 'unsuccessful' && !grant.isAwarded
+                                    ? 'bg-slate-100 text-slate-400'
+                                    : 'bg-slate-900 text-white'
+                              }`}
+                            >
+                              {formatPts(pts)}
+                            </span>
+                            {grantIssues.length > 0 && (
+                              <AlertTriangle className="h-3.5 w-3.5 text-red-600" />
+                            )}
+                          </div>
+                          <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] text-slate-600">
+                            <span className="font-medium">
+                              {grant.isLegacy
+                                ? (scheme?.shortName ?? 'Legacy')
+                                : (role?.label ?? grant.roleId)}
+                            </span>
+                            {fullScheme && (
+                              <>
+                                <span className="text-slate-300">&middot;</span>
+                                <span
+                                  className={
+                                    fullScheme.status === 'Confirmed'
+                                      ? 'text-emerald-700 font-medium'
+                                      : 'text-slate-500'
+                                  }
+                                >
+                                  {fullScheme.status}
+                                </span>
+                              </>
+                            )}
+                            {!grant.isLegacy && role && (
+                              <>
+                                <span className="text-slate-300">&middot;</span>
+                                <span
+                                  className={
+                                    role.compensationType === 'salaried'
+                                      ? 'text-indigo-700 font-medium'
+                                      : 'text-sky-700'
+                                  }
+                                >
+                                  {role.compensationType === 'salaried' ? 'Salaried' : 'Teaching Relief'}
+                                </span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="shrink-0">
+                          {grant.isLegacy ? (
+                            <span className="rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-500">
+                              Legacy
+                            </span>
+                          ) : grant.isAwarded ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-teal-700 px-2.5 py-1 text-[11px] font-semibold text-white">
+                              <Lock className="h-3 w-3" />
+                              Awarded
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => onToggleOutcome(grant.id)}
+                              className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold cursor-pointer ${
+                                grant.outcome === 'funded'
+                                  ? 'border-teal-700/30 bg-teal-50 text-teal-800'
+                                  : 'border-slate-300 bg-slate-100 text-slate-600'
+                              }`}
+                            >
+                              <span
+                                aria-hidden="true"
+                                className={`h-1.5 w-1.5 rounded-full ${
+                                  grant.outcome === 'funded' ? 'bg-teal-600' : 'bg-slate-400'
+                                }`}
+                              />
+                              {grant.outcome === 'funded' ? 'If Funded' : 'If Unfunded'}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-[11px] text-slate-500 tabular-nums">
+                        <span>
+                          {grant.isLegacy || grant.isAwarded
+                            ? `Active ${formatQuarterShort(grant.startQuarter)} to ${formatQuarterShort(endQuarter)}`
+                            : grant.outcome === 'unsuccessful'
+                              ? `Pending ${formatQuarterShort(grant.submissionQuarter)} · Freed ${formatQuarterShort(grant.outcomeQuarter)}`
+                              : `Submit ${formatQuarterShort(grant.submissionQuarter)} · Active to ${formatQuarterShort(endQuarter)}`}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          {fullScheme && (
+                            <QuirkToggletip
+                              label={`Scheme quirk for ${fullScheme.name}`}
+                              title={fullScheme.name}
+                              status={fullScheme.status}
+                              content={fullScheme.quirkHint}
+                              extraMeta={`${fullScheme.fundingBandLabel} · ${fullScheme.cadence} · Max ${fullScheme.maxDurationYears} yrs`}
+                            />
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => onEditGrant(grant)}
+                            className="inline-flex items-center gap-1 rounded border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-700 cursor-pointer"
+                          >
+                            <Pencil className="h-3 w-3" />
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => onRemoveGrant(grant.id)}
+                            aria-label={`Remove ${grant.label}`}
+                            className="inline-flex items-center rounded border border-slate-200 bg-white p-1.5 text-slate-500 hover:text-red-700 cursor-pointer"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* Desktop Synchronized Gantt + Capacity Chart (and Mobile Swipe Gantt when selected) */}
       <div
-        className="overflow-x-auto"
+        className={`overflow-x-auto ${mobileView === 'cards' ? 'hidden md:block' : 'block'}`}
         onMouseLeave={() => setHoveredQuarter(null)}
       >
         <div className="min-w-[880px]">

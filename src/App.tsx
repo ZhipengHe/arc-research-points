@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertTriangle,
+  ArrowLeft,
   BookOpen,
   Copy,
   GitCompareArrows,
   Info,
+  Menu,
+  Monitor,
   Pencil,
   Plus,
   Share2,
@@ -12,6 +15,7 @@ import {
   Sparkles,
   Trash2,
   UserCheck,
+  Users,
   X,
 } from 'lucide-react';
 import type {
@@ -77,10 +81,18 @@ export default function App() {
   const [exportModalOpen, setExportModalOpen] = useState(false);
   const [docsDrawerOpen, setDocsDrawerOpen] = useState(false);
 
-  // Inline scenario rename
+  // Inline scenario rename & mobile UI state
   const [renamingScenarioId, setRenamingScenarioId] = useState<string | null>(null);
   const [renameDraft, setRenameDraft] = useState('');
   const [sampleNoticeDismissed, setSampleNoticeDismissed] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mobileTipDismissed, setMobileTipDismissed] = useState(() => {
+    try {
+      return sessionStorage.getItem('arc_mobile_tip_dismissed') === '1';
+    } catch {
+      return false;
+    }
+  });
 
   const [webMcpStatus, setWebMcpStatus] = useState<WebMcpRegistrationStatus>({
     supported: false,
@@ -374,17 +386,17 @@ export default function App() {
     setWorkspace((prev) => (prev ? { ...prev, customOverrides: next } : prev));
   };
 
-  const handleAddCollaborator = (name: string) => {
+  const handleAddCollaborator = (name: string, importedPlan?: SharedPlanPayload) => {
     setWorkspace((prev) => {
       if (!prev) return prev;
       const coCiCount = prev.profiles.filter((p) => !p.isPrimary).length;
-      if (coCiCount >= 2) return prev;
+      if (coCiCount >= 3) return prev;
       const scenId = createId('scen');
       const newProfile: ResearcherProfile = {
         id: createId('profile'),
         name,
         isPrimary: false,
-        eligibility: {
+        eligibility: importedPlan?.eligibility ?? {
           phdConferralDate: '',
           careerInterruptionMonths: 0,
           isIndigenousResearcher: false,
@@ -392,9 +404,9 @@ export default function App() {
         scenarios: [
           {
             id: scenId,
-            name: 'Current Commitments',
+            name: importedPlan?.scenarioName || 'Current Commitments',
             createdAt: new Date().toISOString(),
-            grants: [],
+            grants: importedPlan ? importedPlan.grants : [],
           },
         ],
         activeScenarioId: scenId,
@@ -433,6 +445,18 @@ export default function App() {
       scenarios: [...profile.scenarios, newScenario],
       activeScenarioId: newScenario.id,
     }));
+    setPendingSharedPlan(null);
+    window.history.replaceState(null, '', window.location.pathname + window.location.search);
+  };
+
+  const handleImportSharedPlanAsCoCi = () => {
+    if (!pendingSharedPlan || !workspace) return;
+    const coCiCount = workspace.profiles.filter((p) => !p.isPrimary).length;
+    const label =
+      pendingSharedPlan.scenarioName && pendingSharedPlan.scenarioName !== 'Shared Plan'
+        ? `${pendingSharedPlan.scenarioName} (Co-CI)`
+        : `Co-CI ${coCiCount + 1}`;
+    handleAddCollaborator(label, pendingSharedPlan);
     setPendingSharedPlan(null);
     window.history.replaceState(null, '', window.location.pathname + window.location.search);
   };
@@ -634,24 +658,25 @@ export default function App() {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#f8f9fb] text-slate-900">
-      {/* Compact Workspace Top Bar (Single Row on 1280px Laptops) */}
-      <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur-xs">
-        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-2 px-3.5 py-2">
+      {/* Compact Workspace Top Bar (Single Row on 1280px Laptops; Slim Collapsible Bar on Phones) */}
+      <header className="md:sticky md:top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur-xs">
+        <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-2 px-3.5 py-2">
           {/* Brand + Live 13-Point Counter */}
-          <div className="flex flex-wrap items-center gap-2.5">
-            <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="flex items-center gap-2 min-w-0">
               <BrandMark className="h-7 w-7" />
               <h1
                 title="ARC NCGP Research Points Planner"
-                className="text-sm font-semibold tracking-tight text-slate-900 whitespace-nowrap"
+                className="truncate text-sm font-semibold tracking-tight text-slate-900"
               >
-                ARC NCGP Points Planner
+                <span className="hidden sm:inline">ARC NCGP Points Planner</span>
+                <span className="sm:hidden">ARC Points</span>
               </h1>
             </div>
 
             {/* Live X / 13 Counter Pill */}
             <div
-              className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 font-mono text-[11px] tabular-nums whitespace-nowrap ${
+              className={`inline-flex items-center gap-1.5 rounded-full border px-2 sm:px-2.5 py-0.5 font-mono text-[11px] tabular-nums whitespace-nowrap shrink-0 ${
                 peakSummary.overCapQuarters.length > 0
                   ? 'border-red-300 bg-red-50 text-red-800'
                   : 'border-slate-200 bg-slate-50 text-slate-800'
@@ -661,21 +686,21 @@ export default function App() {
               <span className="font-bold">
                 {selectedLoad?.totalPoints ?? 0}/{effectiveRules.hardCap} pts
               </span>
-              <span className="text-slate-300">|</span>
-              <span>
+              <span className="hidden sm:inline text-slate-300">|</span>
+              <span className="hidden sm:inline">
                 Peak {peakSummary.peakPoints}/{effectiveRules.hardCap}
               </span>
               {peakSummary.overCapQuarters.length > 0 && (
                 <span className="inline-flex items-center gap-0.5 font-sans text-[10px] font-semibold text-red-700">
                   <AlertTriangle className="h-3 w-3" />
-                  Over Cap
+                  <span className="hidden sm:inline">Over Cap</span>
                 </span>
               )}
             </div>
 
-            {/* Profile Switcher (shown when Co-CI collaborators have been added) */}
+            {/* Desktop Profile Switcher (shown on xl+ when Co-CI collaborators exist; < xl uses Team panel or mobile menu) */}
             {workspace.profiles.length > 1 && (
-              <div className="no-print flex items-center gap-0.5 rounded-md border border-slate-200 bg-slate-50 p-0.5 text-[11px]">
+              <div className="no-print hidden xl:flex items-center gap-0.5 rounded-md border border-slate-200 bg-slate-50 p-0.5 text-[11px]">
                 {workspace.profiles.map((p) => (
                   <button
                     key={p.id}
@@ -696,8 +721,37 @@ export default function App() {
             )}
           </div>
 
-          {/* Action Controls */}
-          <div className="no-print flex flex-wrap items-center gap-1.5 text-[11px]">
+          {/* Mobile Compact Actions (< md): + Add + Menu Toggle */}
+          <div className="no-print flex md:hidden items-center gap-1.5 shrink-0">
+            <button
+              type="button"
+              onClick={() => {
+                setEditingGrant(null);
+                setGrantModalOpen(true);
+              }}
+              className="inline-flex items-center gap-1 rounded-md bg-slate-900 px-2.5 py-1.5 text-[11px] font-semibold text-white cursor-pointer"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Add
+            </button>
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen((v) => !v)}
+              aria-expanded={mobileMenuOpen}
+              aria-label="Toggle planner tools menu"
+              className={`inline-flex items-center gap-1 rounded-md border px-2 py-1.5 text-[11px] font-medium cursor-pointer ${
+                mobileMenuOpen
+                  ? 'border-slate-900 bg-slate-900 text-white'
+                  : 'border-slate-300 bg-white text-slate-700'
+              }`}
+            >
+              {mobileMenuOpen ? <X className="h-3.5 w-3.5" /> : <Menu className="h-3.5 w-3.5" />}
+              Menu
+            </button>
+          </div>
+
+          {/* Desktop Action Controls (md+) */}
+          <div className="no-print hidden md:flex flex-wrap items-center gap-1.5 text-[11px]">
             <button
               type="button"
               onClick={() => {
@@ -788,18 +842,118 @@ export default function App() {
           </div>
         </div>
 
+        {/* Mobile Collapsible Tools Drawer (< md) */}
+        {mobileMenuOpen && (
+          <div className="no-print md:hidden border-t border-slate-200 bg-slate-50 px-3.5 py-3 space-y-2.5 text-xs">
+            {workspace.profiles.length > 1 && (
+              <div className="space-y-1">
+                <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                  Switch Profile
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {workspace.profiles.map((p) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => {
+                        setWorkspace((prev) => (prev ? { ...prev, activeProfileId: p.id } : prev));
+                        setMobileMenuOpen(false);
+                      }}
+                      className={`rounded-md border px-2.5 py-1 text-[11px] font-medium cursor-pointer ${
+                        p.id === workspace.activeProfileId
+                          ? 'border-slate-900 bg-slate-900 text-white'
+                          : 'border-slate-300 bg-white text-slate-700'
+                      }`}
+                    >
+                      {p.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            <div className="grid grid-cols-2 gap-1.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setTemplatesOpen(true);
+                  setMobileMenuOpen(false);
+                }}
+                className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-2.5 py-2 font-medium text-slate-700 cursor-pointer"
+              >
+                <Sparkles className="h-3.5 w-3.5 text-slate-500" />
+                Templates
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setEligibilityOpen(true);
+                  setMobileMenuOpen(false);
+                }}
+                className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-2.5 py-2 font-medium text-slate-700 cursor-pointer"
+              >
+                <UserCheck className="h-3.5 w-3.5 text-slate-500" />
+                Eligibility
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setCompareOpen(true);
+                  setMobileMenuOpen(false);
+                }}
+                className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-2.5 py-2 font-medium text-slate-700 cursor-pointer"
+              >
+                <GitCompareArrows className="h-3.5 w-3.5 text-slate-500" />
+                Compare Plans
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setCustomRulesOpen(true);
+                  setMobileMenuOpen(false);
+                }}
+                className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-2.5 py-2 font-medium text-slate-700 cursor-pointer"
+              >
+                <SlidersHorizontal className="h-3.5 w-3.5 text-slate-500" />
+                {overridesActive ? 'Custom Rules' : 'Rules Override'}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setExportModalOpen(true);
+                  setMobileMenuOpen(false);
+                }}
+                className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-2.5 py-2 font-medium text-slate-700 cursor-pointer"
+              >
+                <Share2 className="h-3.5 w-3.5 text-slate-500" />
+                Export / Share
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setDocsDrawerOpen(true);
+                  setMobileMenuOpen(false);
+                }}
+                className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-2.5 py-2 font-medium text-slate-700 cursor-pointer"
+              >
+                <BookOpen className="h-3.5 w-3.5 text-slate-500" />
+                Official ARC Docs
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Scenario Tabs & Unofficial Disclaimer Strip */}
         <div className="border-t border-slate-200 bg-slate-50/70">
           <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-2 px-3.5 py-1.5 text-xs">
-            {/* Scenario Tabs */}
-            <div className="flex flex-wrap items-center gap-1">
+            {/* Horizontally scrollable Scenario Tabs on mobile */}
+            <div className="flex items-center gap-1 overflow-x-auto max-w-full pb-0.5 sm:pb-0">
               {activeProfile.scenarios.map((s) => {
                 const isActive = s.id === activeScenario.id;
                 const isRenaming = renamingScenarioId === s.id;
                 return (
                   <div
                     key={s.id}
-                    className={`group inline-flex items-center gap-1 rounded-md border px-2 py-1 arc-state-transition ${
+                    className={`group shrink-0 inline-flex items-center gap-1 rounded-md border px-2 py-1 arc-state-transition ${
                       isActive
                         ? 'border-slate-300 bg-white text-slate-900 shadow-2xs font-semibold'
                         : 'border-transparent text-slate-600 hover:bg-slate-200/60 hover:text-slate-900'
@@ -876,7 +1030,7 @@ export default function App() {
               <button
                 type="button"
                 onClick={handleCreateScenario}
-                className="no-print inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium text-slate-600 hover:bg-slate-200/60 hover:text-slate-900 cursor-pointer"
+                className="no-print shrink-0 inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium text-slate-600 hover:bg-slate-200/60 hover:text-slate-900 cursor-pointer whitespace-nowrap"
               >
                 <Plus className="h-3 w-3" />
                 New Scenario
@@ -884,7 +1038,7 @@ export default function App() {
             </div>
 
             {/* Concise Disclaimer + No Early Relinquishment Notice */}
-            <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
+            <div className="hidden sm:flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
               <span className="inline-flex items-center gap-1 text-slate-700 font-medium">
                 <Info className="h-3 w-3 text-slate-400" />
                 No early relinquishment of active grants
@@ -908,6 +1062,62 @@ export default function App() {
 
       {/* Main Workbench Content */}
       <main className="mx-auto w-full max-w-[1600px] flex-1 px-3.5 py-3 space-y-3">
+        {/* Gentle Dismissible Desktop Recommendation on Narrow Phones (< sm) */}
+        {!mobileTipDismissed && (
+          <div className="no-print sm:hidden flex items-start justify-between gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] text-slate-600 shadow-2xs">
+            <div className="flex items-start gap-2">
+              <Monitor className="h-3.5 w-3.5 text-slate-500 shrink-0 mt-0.5" />
+              <span>
+                <strong>Desktop recommended</strong> for the full 2027-2032 Gantt overview. On
+                phone, swipe the capacity chart or tap any card below.
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setMobileTipDismissed(true);
+                try {
+                  sessionStorage.setItem('arc_mobile_tip_dismissed', '1');
+                } catch {
+                  // ignore
+                }
+              }}
+              aria-label="Dismiss desktop recommendation"
+              className="rounded p-0.5 text-slate-400 hover:text-slate-700 shrink-0 cursor-pointer"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        )}
+
+        {/* Collaborator Context Banner (shown whenever viewing a Co-CI profile) */}
+        {!activeProfile.isPrimary && (
+          <div
+            role="status"
+            className="no-print flex flex-wrap items-center justify-between gap-2 rounded-lg border border-indigo-200 bg-indigo-50/80 px-3.5 py-2 text-xs text-indigo-950"
+          >
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4 text-indigo-700 shrink-0" />
+              <span>
+                Viewing collaborator profile: <strong>{activeProfile.name}</strong>. Grants edited
+                here feed directly into Team / Co-CI Point Check.
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                const primary = workspace.profiles.find((p) => p.isPrimary) ?? workspace.profiles[0];
+                if (primary) {
+                  setWorkspace((prev) => (prev ? { ...prev, activeProfileId: primary.id } : prev));
+                }
+              }}
+              className="inline-flex items-center gap-1 rounded-md bg-indigo-900 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-indigo-800 cursor-pointer shrink-0"
+            >
+              <ArrowLeft className="h-3 w-3" />
+              Back to You (Primary)
+            </button>
+          </div>
+        )}
         {/* Rules Version Update Notice Banner (Preserves Returning User's Saved Plan Safely) */}
         {outdatedFromVersion && (
           <div
@@ -954,17 +1164,26 @@ export default function App() {
               <strong>Shared plan detected in URL:</strong> &ldquo;{pendingSharedPlan.scenarioName}
               &rdquo; ({pendingSharedPlan.grants.length} grant
               {pendingSharedPlan.grants.length === 1 ? '' : 's'}
-              {pendingSharedPlan.strippedTitles ? ', custom titles stripped' : ''}). Import as a new
-              scenario tab without overwriting your existing plans?
+              {pendingSharedPlan.strippedTitles ? ', custom titles stripped' : ''}). Add to your own
+              scenarios or load directly as a Co-CI collaborator profile?
             </div>
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex flex-wrap items-center gap-2 shrink-0">
               <button
                 type="button"
                 onClick={handleImportSharedPlan}
                 className="rounded bg-teal-800 px-3 py-1 text-[11px] font-semibold text-white hover:bg-teal-900 cursor-pointer"
               >
-                Import as New Scenario
+                Import as My Scenario
               </button>
+              {workspace.profiles.filter((p) => !p.isPrimary).length < 3 && (
+                <button
+                  type="button"
+                  onClick={handleImportSharedPlanAsCoCi}
+                  className="rounded border border-teal-700 bg-white px-3 py-1 text-[11px] font-semibold text-teal-900 hover:bg-teal-100 cursor-pointer"
+                >
+                  Import as Co-CI Profile
+                </button>
+              )}
               <button
                 type="button"
                 onClick={handleDismissSharedPlan}
