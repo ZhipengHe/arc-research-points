@@ -3,6 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
+  "packageManager": "pnpm@11.28.5",
   "description": "Static ARC NCGP 13-point Research Points Planner for Australian researchers",
   "homepage": "https://arc-points.zhipenghe.me",
   "license": "MIT",
