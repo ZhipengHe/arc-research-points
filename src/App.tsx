@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  AlertTriangle,
   ArrowLeft,
   BookOpen,
   Compass,
@@ -44,7 +43,6 @@ import {
   computeEligibilityIssues,
   computeFundingRollup,
   computeQuarterlyLoads,
-  getPeakLoadSummary,
 } from './engine/planner';
 import {
   buildScenarioFromTemplate,
@@ -182,8 +180,6 @@ export default function App() {
     if (!effectiveRules || !activeScenario) return [];
     return computeQuarterlyLoads(activeScenario.grants, effectiveRules);
   }, [effectiveRules, activeScenario]);
-
-  const peakSummary = useMemo(() => getPeakLoadSummary(quarterlyLoads), [quarterlyLoads]);
 
   const eligibilityIssues = useMemo(() => {
     if (!effectiveRules || !activeScenario || !activeProfile) return [];
@@ -764,9 +760,6 @@ export default function App() {
     primaryProfile.scenarios.find((s) => s.id === primaryProfile.activeScenarioId) ??
     primaryProfile.scenarios[0];
   const primaryGrants = primaryActiveScenario?.grants ?? [];
-
-  const selectedLoad =
-    quarterlyLoads.find((l) => l.quarter === workspace.selectedQuarter) ?? quarterlyLoads[0];
   const overridesActive = hasActiveOverrides(workspace.customOverrides);
 
   return (
@@ -774,34 +767,16 @@ export default function App() {
       {/* Compact Workspace Top Bar (Single Row on 1280px Laptops; Slim Collapsible Bar on Phones) */}
       <header className="md:sticky md:top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur-xs">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-2 px-3.5 py-2">
-          {/* Brand + Live 13-Point Counter */}
+          {/* Brand */}
           <div className="flex items-center gap-2 min-w-0">
-            <div className="flex items-center gap-2 min-w-0">
-              <BrandMark className="h-7 w-7 sm:h-8 sm:w-8" />
-              <h1
-                title="ARC NCGP Research Points Planner"
-                className="truncate text-[15px] sm:text-base font-bold tracking-tight text-slate-900"
-              >
-                <span className="hidden sm:inline">ARC NCGP Points Planner</span>
-                <span className="sm:hidden">ARC Points</span>
-              </h1>
-            </div>
-
-            {/* Mobile compact point readout (< md) */}
-            <div
-              className={`inline-flex md:hidden items-center gap-1.5 rounded-full border px-2 py-0.5 font-mono text-[11px] tabular-nums whitespace-nowrap shrink-0 ${
-                peakSummary.overCapQuarters.length > 0
-                  ? 'border-red-300 bg-red-50 text-red-800'
-                  : 'border-slate-200 bg-slate-50 text-slate-800'
-              }`}
+            <BrandMark className="h-7 w-7 sm:h-8 sm:w-8" />
+            <h1
+              title="ARC NCGP Research Points Planner"
+              className="truncate text-[15px] sm:text-base font-bold tracking-tight text-slate-900"
             >
-              <span className="font-bold">
-                {selectedLoad?.totalPoints ?? 0}/{effectiveRules.hardCap} pts
-              </span>
-              {peakSummary.overCapQuarters.length > 0 && (
-                <AlertTriangle className="h-3 w-3 text-red-700" />
-              )}
-            </div>
+              <span className="hidden sm:inline">ARC NCGP Points Planner</span>
+              <span className="sm:hidden">ARC Points</span>
+            </h1>
           </div>
 
           {/* Mobile Compact Actions (< md): + Add + Menu Toggle */}
