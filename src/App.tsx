@@ -1335,11 +1335,7 @@ export default function App() {
           )}
 
         {/* Primary Desktop Horizontal Workbench Grid */}
-        <div
-          className={`print-full-width grid grid-cols-1 gap-3 items-start ${
-            timelineExpanded ? '' : 'xl:grid-cols-[minmax(0,1fr)_350px]'
-          }`}
-        >
+        <div className="print-full-width grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_350px] gap-3 items-start">
           {/* Left / Main Stage: Synchronized Timeline + Capacity Chart + Funding Rollup */}
           <div className="min-w-0 space-y-3">
             <TimelineAndCapacity
@@ -1365,6 +1361,7 @@ export default function App() {
                 setGrantModalOpen(true);
               }}
               isExpanded={timelineExpanded}
+              scenarioName={activeScenario.name}
               onToggleExpand={() => setTimelineExpanded((v) => !v)}
               onDownloadPng={handleQuickDownloadPng}
               onPrintPdf={handleQuickPrintPdf}

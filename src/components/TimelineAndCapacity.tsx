@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   AlertTriangle,
   ArrowLeftRight,
@@ -46,6 +46,7 @@ interface TimelineAndCapacityProps {
   onRemoveGrant: (grantId: string) => void;
   onOpenAddGrant: () => void;
   isExpanded?: boolean;
+  scenarioName?: string;
   onToggleExpand?: () => void;
   onDownloadPng?: () => void;
   onPrintPdf?: () => void;
@@ -68,12 +69,30 @@ export function TimelineAndCapacity({
   onRemoveGrant,
   onOpenAddGrant,
   isExpanded = false,
+  scenarioName,
   onToggleExpand,
   onDownloadPng,
   onPrintPdf,
 }: TimelineAndCapacityProps) {
   const [hoveredQuarter, setHoveredQuarter] = useState<QuarterKey | null>(null);
   const [mobileView, setMobileView] = useState<'cards' | 'gantt'>('cards');
+
+  useEffect(() => {
+    if (!isExpanded || !onToggleExpand) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !document.querySelector('dialog[open]')) {
+        e.preventDefault();
+        onToggleExpand();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [isExpanded, onToggleExpand]);
 
   const activeQuarter = hoveredQuarter ?? selectedQuarter;
   const activeLoad = loads.find((l) => l.quarter === activeQuarter) ?? loads[0];
@@ -127,127 +146,169 @@ export function TimelineAndCapacity({
   return (
     <section
       aria-label="Synchronized Quarterly Timeline and Capacity Chart"
-      className="rounded-lg border border-slate-200 bg-white shadow-xs overflow-hidden print-avoid-break"
+      className={
+        isExpanded
+          ? 'group/chart fixed inset-0 z-50 flex flex-col bg-white overflow-auto print-avoid-break'
+          : 'group/chart relative rounded-lg border border-slate-200 bg-white shadow-xs overflow-hidden print-avoid-break'
+      }
     >
-      {/* Top Synchronized Quarter Readout Bar + Top-Right Chart Quick Actions */}
-      <div className="flex items-start justify-between gap-2 border-b border-slate-200 bg-slate-50/80 px-3.5 py-2 text-xs">
-        <div className="flex min-w-0 flex-1 flex-wrap items-center justify-between gap-x-4 gap-y-1.5">
-          <div className="flex flex-wrap items-center gap-2.5">
-            <span className="font-semibold text-slate-700 uppercase tracking-wide text-[11px]">
-              {hoveredQuarter ? 'Inspecting' : 'Selected'}:
+      {/* Fullscreen Header Strip (only shown in Viewport Fullscreen mode) */}
+      {isExpanded && (
+        <div className="no-print sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-slate-200 bg-white/95 px-4 py-2.5 backdrop-blur-xs">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-sm font-bold tracking-tight text-slate-900 truncate">
+              {scenarioName ? `${scenarioName} · ` : ''}ARC NCGP Timeline (2027-2032)
             </span>
-            <span className="inline-flex items-center rounded bg-slate-900 px-1.5 py-0.5 font-mono text-[11px] font-semibold text-white tabular-nums">
-              {formatQuarterShort(activeQuarter)}
-            </span>
-            {activeLoad && (
-              <div className="flex flex-wrap items-center gap-2 tabular-nums">
-                <span
-                  className={`font-semibold ${
-                    activeLoad.isOverCap ? 'text-red-700' : 'text-slate-900'
-                  }`}
-                >
-                  {activeLoad.totalPoints} / {rules.hardCap} pts
-                </span>
-                <span className="text-slate-300">|</span>
-                <span className="text-teal-800">{activeLoad.activePoints} active</span>
-                <span className="text-amber-700">{activeLoad.pendingPoints} pending</span>
-                <span className="text-slate-300">|</span>
-                {activeLoad.isOverCap ? (
-                  <span className="inline-flex items-center gap-1 font-semibold text-red-700">
-                    <AlertTriangle className="h-3.5 w-3.5" />
-                    Over cap by +{formatPts(activeLoad.overCapBy)}
-                  </span>
-                ) : (
-                  <span className="text-slate-600">
-                    <strong className="text-slate-900">{activeLoad.remainingPoints}</strong>{' '}
-                    {activeLoad.remainingPoints === 1 ? 'pt' : 'pts'} free
-                  </span>
-                )}
-                {activeLoad.hasSciConflict && (
-                  <span className="inline-flex items-center gap-1 rounded bg-amber-100 px-1.5 py-0.5 text-[11px] font-medium text-amber-900">
-                    SCI salary overlaps teaching relief
-                  </span>
-                )}
-              </div>
-            )}
           </div>
-
-          {/* Functional Color Legend */}
-          <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-600">
-            <span className="inline-flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-[2px] bg-teal-700" />
-              Funded Lock
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-[2px] border border-amber-500 bg-pending-stripes" />
-              Pending Lock
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-[2px] bg-slate-300" />
-              Legacy (0 pts)
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <span className="h-0.5 w-3.5 bg-red-600" />
-              {rules.hardCap}-pt Cap
-            </span>
-            {ecrCutoffDate && ecrFraction !== null && (
-              <span className="inline-flex items-center gap-1.5 text-violet-700">
-                <span className="h-3 border-l border-dashed border-violet-600" />
-                ECR 5yr Cutoff ({formatDateShort(ecrCutoffDate)})
-              </span>
-            )}
-            {indigenousCutoffDate && indigenousFraction !== null && (
-              <span className="inline-flex items-center gap-1.5 text-amber-800">
-                <span className="h-3 border-l border-dashed border-amber-600" />
-                Indig. {rules.indigenousMaxPostPhdYears}yr Cutoff (
-                {formatDateShort(indigenousCutoffDate)})
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Quiet Top-Right Quick-Action Controls */}
-        {(onDownloadPng || onPrintPdf || onToggleExpand) && (
-          <div className="no-print shrink-0 inline-flex items-center gap-0.5 rounded-md border border-slate-200 bg-white/90 p-0.5 opacity-75 hover:opacity-100 focus-within:opacity-100 arc-state-transition">
+          <div className="flex items-center gap-1.5 shrink-0">
             {onDownloadPng && (
               <button
                 type="button"
                 onClick={onDownloadPng}
-                title="Download high-DPI timeline PNG"
-                aria-label="Download timeline PNG"
-                className="rounded p-1 text-slate-600 hover:bg-slate-100 hover:text-slate-950 cursor-pointer"
+                className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 cursor-pointer"
               >
-                <FileImage className="h-3.5 w-3.5" />
+                <FileImage className="h-3.5 w-3.5 text-slate-500" />
+                PNG
               </button>
             )}
             {onPrintPdf && (
               <button
                 type="button"
                 onClick={onPrintPdf}
-                title="Print or save landscape PDF"
-                aria-label="Print or save landscape PDF"
-                className="rounded p-1 text-slate-600 hover:bg-slate-100 hover:text-slate-950 cursor-pointer"
+                className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 cursor-pointer"
               >
-                <Printer className="h-3.5 w-3.5" />
+                <Printer className="h-3.5 w-3.5 text-slate-500" />
+                Print / PDF
               </button>
             )}
             {onToggleExpand && (
               <button
                 type="button"
                 onClick={onToggleExpand}
-                title={isExpanded ? 'Show side panel' : 'Expand timeline to full width'}
-                aria-label={isExpanded ? 'Show side panel' : 'Expand timeline to full width'}
-                className="hidden xl:inline-flex rounded p-1 text-slate-600 hover:bg-slate-100 hover:text-slate-950 cursor-pointer"
+                title="Exit fullscreen (Esc)"
+                className="inline-flex items-center gap-1.5 rounded-md bg-slate-900 px-3 py-1 text-xs font-semibold text-white hover:bg-slate-800 cursor-pointer"
               >
-                {isExpanded ? (
-                  <Minimize2 className="h-3.5 w-3.5" />
-                ) : (
-                  <Maximize2 className="h-3.5 w-3.5" />
-                )}
+                <Minimize2 className="h-3.5 w-3.5" />
+                Exit Fullscreen
               </button>
             )}
           </div>
-        )}
+        </div>
+      )}
+
+      {/* Hover-Reveal Floating Quick-Action Bar (normal view: hidden until hovering chart/timeline) */}
+      {!isExpanded && (onDownloadPng || onPrintPdf || onToggleExpand) && (
+        <div className="no-print absolute top-1.5 right-2.5 z-30 inline-flex items-center gap-0.5 rounded-md border border-slate-200 bg-white/95 p-0.5 shadow-sm backdrop-blur-xs opacity-0 pointer-events-none group-hover/chart:opacity-100 group-hover/chart:pointer-events-auto focus-within:opacity-100 focus-within:pointer-events-auto arc-state-transition">
+          {onDownloadPng && (
+            <button
+              type="button"
+              onClick={onDownloadPng}
+              title="Download high-DPI timeline PNG"
+              aria-label="Download timeline PNG"
+              className="rounded p-1 text-slate-600 hover:bg-slate-100 hover:text-slate-950 cursor-pointer"
+            >
+              <FileImage className="h-3.5 w-3.5" />
+            </button>
+          )}
+          {onPrintPdf && (
+            <button
+              type="button"
+              onClick={onPrintPdf}
+              title="Print or save landscape PDF"
+              aria-label="Print or save landscape PDF"
+              className="rounded p-1 text-slate-600 hover:bg-slate-100 hover:text-slate-950 cursor-pointer"
+            >
+              <Printer className="h-3.5 w-3.5" />
+            </button>
+          )}
+          {onToggleExpand && (
+            <button
+              type="button"
+              onClick={onToggleExpand}
+              title="View timeline fullscreen"
+              aria-label="View timeline fullscreen"
+              className="rounded p-1 text-slate-600 hover:bg-slate-100 hover:text-slate-950 cursor-pointer"
+            >
+              <Maximize2 className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Top Synchronized Quarter Readout Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 bg-slate-50/80 px-3.5 py-2 text-xs">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <span className="font-semibold text-slate-700 uppercase tracking-wide text-[11px]">
+            {hoveredQuarter ? 'Inspecting' : 'Selected'}:
+          </span>
+          <span className="inline-flex items-center rounded bg-slate-900 px-1.5 py-0.5 font-mono text-[11px] font-semibold text-white tabular-nums">
+            {formatQuarterShort(activeQuarter)}
+          </span>
+          {activeLoad && (
+            <div className="flex flex-wrap items-center gap-2 tabular-nums">
+              <span
+                className={`font-semibold ${
+                  activeLoad.isOverCap ? 'text-red-700' : 'text-slate-900'
+                }`}
+              >
+                {activeLoad.totalPoints} / {rules.hardCap} pts
+              </span>
+              <span className="text-slate-300">|</span>
+              <span className="text-teal-800">{activeLoad.activePoints} active</span>
+              <span className="text-amber-700">{activeLoad.pendingPoints} pending</span>
+              <span className="text-slate-300">|</span>
+              {activeLoad.isOverCap ? (
+                <span className="inline-flex items-center gap-1 font-semibold text-red-700">
+                  <AlertTriangle className="h-3.5 w-3.5" />
+                  Over cap by +{formatPts(activeLoad.overCapBy)}
+                </span>
+              ) : (
+                <span className="text-slate-600">
+                  <strong className="text-slate-900">{activeLoad.remainingPoints}</strong>{' '}
+                  {activeLoad.remainingPoints === 1 ? 'pt' : 'pts'} free
+                </span>
+              )}
+              {activeLoad.hasSciConflict && (
+                <span className="inline-flex items-center gap-1 rounded bg-amber-100 px-1.5 py-0.5 text-[11px] font-medium text-amber-900">
+                  SCI salary overlaps teaching relief
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Functional Color Legend */}
+        <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-600">
+          <span className="inline-flex items-center gap-1.5">
+            <span className="h-2.5 w-2.5 rounded-[2px] bg-teal-700" />
+            Funded Lock
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <span className="h-2.5 w-2.5 rounded-[2px] border border-amber-500 bg-pending-stripes" />
+            Pending Lock
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <span className="h-2.5 w-2.5 rounded-[2px] bg-slate-300" />
+            Legacy (0 pts)
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <span className="h-0.5 w-3.5 bg-red-600" />
+            {rules.hardCap}-pt Cap
+          </span>
+          {ecrCutoffDate && ecrFraction !== null && (
+            <span className="inline-flex items-center gap-1.5 text-violet-700">
+              <span className="h-3 border-l border-dashed border-violet-600" />
+              ECR 5yr Cutoff ({formatDateShort(ecrCutoffDate)})
+            </span>
+          )}
+          {indigenousCutoffDate && indigenousFraction !== null && (
+            <span className="inline-flex items-center gap-1.5 text-amber-800">
+              <span className="h-3 border-l border-dashed border-amber-600" />
+              Indig. {rules.indigenousMaxPostPhdYears}yr Cutoff (
+              {formatDateShort(indigenousCutoffDate)})
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Mobile-First View (< md): Full-width touch cards + Full-width scrollable capacity chart (with optional Gantt toggle) */}
