@@ -4,6 +4,13 @@
   "version": "1.0.0",
   "type": "module",
   "description": "Static ARC NCGP 13-point Research Points Planner for Australian researchers",
+  "homepage": "https://arc-points.zhipenghe.me",
+  "license": "MIT",
+  "author": "Zhipeng He <https://zhipenghe.me/>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ZhipengHe/arc-research-points.git"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",

@@ -71,6 +71,7 @@ export interface RulesChangelogEntry {
 export interface ProjectMeta {
   authorName: string;
   authorUrl: string;
+  siteUrl?: string;
   githubUrl: string;
   githubLabel: string;
 }

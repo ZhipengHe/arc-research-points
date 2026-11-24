@@ -2,9 +2,10 @@
 
 > Static, zero-backend client-side planning workbench for Australian researchers modelling multi-year grant pipelines under the Australian Research Council (ARC) National Competitive Grants Program (NCGP) 13-point system (2027-2032). Unofficial tool; rules verified November 2026. All user data stays in browser `localStorage` with zero server storage.
 
-## Structured Data
+## Structured Data & Canonical URL
 
-- [rules.json](/rules.json): Complete machine-readable definitions of all 8 NCGP schemes, 4 legacy 0-point schemes, role point weights, indicative launch windows, durations, funding bands, eligibility cutoffs, changelog, and official ARC URLs.
+- [Live Workbench](https://arc-points.zhipenghe.me/): Canonical public deployment (`arc-points.zhipenghe.me`).
+- [rules.json](https://arc-points.zhipenghe.me/rules.json): Complete machine-readable definitions of all 8 NCGP schemes, 4 legacy 0-point schemes, role point weights, indicative launch windows, durations, funding bands, eligibility cutoffs, changelog, and official ARC URLs.
 
 ## How to Use This Website
 

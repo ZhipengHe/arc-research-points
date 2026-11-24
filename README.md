@@ -2,6 +2,8 @@
 
 An unofficial, zero-backend static planning workbench for Australian researchers modelling multi-year grant pipelines under the Australian Research Council (ARC) National Competitive Grants Program (NCGP) 13-point system (2027-2032).
 
+**Live App:** [arc-points.zhipenghe.me](https://arc-points.zhipenghe.me)
+
 > **Unofficial Tool:** Built independently for planning purposes. Rules reflect publicly available ARC NCGP announcements verified **November 2026**. Always confirm eligibility, dates, and point limits against final Grant Opportunity Guidelines and RMS before submitting.
 
 ## Key Capabilities
@@ -14,7 +16,7 @@ An unofficial, zero-backend static planning workbench for Australian researchers
   - **Legacy Grants (0 Points):** Plot existing DP, LP, DECRA, and FT grants for real-world workload visibility without consuming Research Points.
 - **"What Fits My Remaining Points?" Helper:** Click any quarter to list valid scheme + role combinations that fit your free point balance, with eligibility filtering and multi-year peak impact checks.
 - **Scenario Comparison & Starter Templates:** Create, duplicate, rename, and compare strategies side-by-side (`Fresh Postdoc / ECR`, `Mid-Career Researcher`, `Senior Lead`).
-- **Collaborator / Team Point Check:** Add 1-2 co-CI profiles to verify whether a collaborator has sufficient free points across a bid window.
+- **Collaborator / Team Point Check:** Add Co-CI profiles manually or import colleagues' `#plan=...` Shareable URLs to inspect 2027-2032 overlap mini-charts and switch into any collaborator's full timeline.
 - **Optional Eligibility Profile:** Enter PhD conferral date (+ career interruption months) to render a vertical dashed 5-year ECR cutoff line and flag ineligible roles (`Initiate`, `SCI (ECR)`), plus an Aboriginal and Torres Strait Islander researcher toggle for `Indigenous Excellence` and `SCI (MCR)`.
 - **Funding Band & Teaching Relief Roll-Up:** Summarizes indicative annual/total funding bands and unsalaried CI teaching relief eligibility (up to $50,000/yr), flagging overlaps with active `SCI` salaried roles.
 - **Custom Rules Override:** Locally override the hard cap, role point weights, or launch quarters for hypothetical testing (with one-click reset to defaults).
@@ -48,7 +50,7 @@ pnpm typecheck && pnpm test && pnpm build
 pnpm preview
 ```
 
-The production bundle is written to `dist/` (including `dist/rules.json`, `dist/llms.txt`, and `dist/favicon.svg`) and can be hosted on any static host (GitHub Pages, Cloudflare Pages, Netlify, Vercel).
+The production bundle is written to `dist/` (including `dist/rules.json`, `dist/llms.txt`, and `dist/favicon.svg`) and is configured for Cloudflare Workers Static Assets via [`wrangler.jsonc`](wrangler.jsonc) (`pnpm dlx wrangler deploy` or Cloudflare Workers Git Builds).
 
 ## Updating ARC Rules
 
