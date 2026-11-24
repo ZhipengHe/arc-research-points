@@ -5,6 +5,7 @@ import {
   ChevronUp,
   DollarSign,
   ExternalLink,
+  Lock,
   ShieldAlert,
 } from 'lucide-react';
 import type {
@@ -35,91 +36,92 @@ export function FundingRollupPanel({
 
   return (
     <div className="space-y-3">
-      {/* Compact KPI / Roll-Up Strip */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 print-avoid-break">
-        <div className="rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 shadow-xs">
-          <div className="flex items-center justify-between text-[11px] font-medium uppercase tracking-wide text-slate-500">
-            <span>Indicative Annual Funding</span>
-            <DollarSign className="h-3.5 w-3.5 text-slate-400" />
+      {/* Compact Single-Bar Summary Strip (Option A: zero duplicate Peak card, ~half vertical footprint) */}
+      <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-slate-200 rounded-lg border border-slate-200 bg-white shadow-xs overflow-hidden print-avoid-break">
+        {/* Segment 1: Indicative Funding Band */}
+        <div className="px-3.5 py-2.5">
+          <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+            <DollarSign className="h-3 w-3 text-slate-400" />
+            <span>Indicative Funding (If Funded)</span>
           </div>
-          <div className="mt-1 font-mono text-base font-semibold text-slate-900 tabular-nums">
-            {rollup.annualFundingMax > 0
-              ? `${formatCurrencyAud(rollup.annualFundingMin)}-${formatCurrencyAud(rollup.annualFundingMax)}/yr`
-              : '$0/yr'}
-          </div>
-          <div className="mt-0.5 text-[11px] text-slate-500 tabular-nums">
-            Across {rollup.fundedCount} funded grant{rollup.fundedCount === 1 ? '' : 's'}
-            {rollup.totalFundingMax > 0
-              ? ` (${formatCurrencyAud(rollup.totalFundingMin)}-${formatCurrencyAud(rollup.totalFundingMax)} total)`
-              : ''}
-            {rollup.extraNotes.length > 0 && (
-              <div className="mt-0.5 text-[10px] text-slate-600">
-                {rollup.extraNotes.join(' · ')}
-              </div>
+          <div className="mt-0.5 flex flex-wrap items-baseline gap-x-2 tabular-nums">
+            <span className="font-mono text-sm font-semibold text-slate-900">
+              {rollup.annualFundingMax > 0
+                ? `${formatCurrencyAud(rollup.annualFundingMin)}-${formatCurrencyAud(rollup.annualFundingMax)}/yr`
+                : '$0/yr'}
+            </span>
+            {rollup.totalFundingMax > 0 && (
+              <span className="text-[11px] text-slate-500">
+                {formatCurrencyAud(rollup.totalFundingMin)}-{formatCurrencyAud(rollup.totalFundingMax)}{' '}
+                total ({rollup.fundedCount} {rollup.fundedCount === 1 ? 'grant' : 'grants'})
+              </span>
             )}
           </div>
+          {rollup.extraNotes.length > 0 && (
+            <div className="mt-0.5 text-[10px] text-slate-500 truncate" title={rollup.extraNotes.join(' · ')}>
+              {rollup.extraNotes.join(' · ')}
+            </div>
+          )}
         </div>
 
-        <div className="rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 shadow-xs">
-          <div className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
-            Teaching Relief &amp; Salary Cues
+        {/* Segment 2: Teaching Relief & Salary */}
+        <div className="px-3.5 py-2.5">
+          <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+            Teaching Relief &amp; Salary
           </div>
-          <div className="mt-1 font-mono text-base font-semibold text-slate-900 tabular-nums">
-            {rollup.annualTeachingReliefMax > 0
-              ? `Up to ${formatCurrencyAud(rollup.annualTeachingReliefMax)}/yr`
-              : rollup.hasSalariedRole
-                ? 'Salaried (No TR)'
-                : '$0/yr'}
+          <div className="mt-0.5 flex flex-wrap items-baseline gap-x-2 tabular-nums">
+            <span className="font-mono text-sm font-semibold text-slate-900">
+              {rollup.annualTeachingReliefMax > 0
+                ? `Up to ${formatCurrencyAud(rollup.annualTeachingReliefMax)}/yr`
+                : rollup.hasSalariedRole
+                  ? 'Salaried (No TR)'
+                  : '$0/yr'}
+            </span>
           </div>
-          <div className="mt-0.5 text-[11px] text-slate-500">
+          <div className="mt-0.5 text-[11px] text-slate-500 leading-snug">
             {rollup.hasTeachingReliefBlockedBySci ? (
               <span className="font-medium text-amber-800">
-                SCI salary overlap: teaching relief cannot be claimed during quarters with an active SCI salary.
+                SCI salary overlap blocks teaching relief in overlapping quarters.
               </span>
             ) : rollup.hasSalariedRole ? (
-              'Includes salaried fellowship/SCI role (cannot combine with CI teaching relief).'
+              'Salaried role (cannot combine with CI teaching relief).'
             ) : (
-              'Unsalaried CI / Lead CI roles eligible for up to $50k/yr teaching relief.'
+              'Unsalaried CI / Lead CI eligible up to $50k/yr.'
             )}
           </div>
         </div>
 
+        {/* Segment 3: Relinquishment & Cap Status */}
         <div
-          className={`rounded-lg border px-3.5 py-2.5 shadow-xs ${
-            peak.overCapQuarters.length > 0
-              ? 'border-red-300 bg-red-50/60'
-              : 'border-slate-200 bg-white'
+          className={`px-3.5 py-2.5 ${
+            peak.overCapQuarters.length > 0 ? 'bg-red-50/60' : ''
           }`}
         >
-          <div className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
-            Capacity &amp; Relinquishment
-          </div>
-          <div
-            className={`mt-1 font-mono text-base font-semibold tabular-nums ${
-              peak.overCapQuarters.length > 0 ? 'text-red-700' : 'text-slate-900'
-            }`}
-          >
-            Peak {peak.peakPoints} / {rules.hardCap} pts
-            {peak.peakQuarter && (
-              <span className="ml-1.5 text-xs font-normal text-slate-500">
-                ({formatQuarterShort(peak.peakQuarter)})
-              </span>
-            )}
-          </div>
-          <div className="mt-0.5 text-[11px] text-slate-600">
+          <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
             {peak.overCapQuarters.length > 0 ? (
-              <span className="font-semibold text-red-700">
-                Exceeds {rules.hardCap}-pt cap in {peak.overCapQuarters.length} quarter
-                {peak.overCapQuarters.length === 1 ? '' : 's'}:{' '}
-                {peak.overCapQuarters
-                  .slice(0, 3)
-                  .map((q) => formatQuarterShort(q.quarter))
-                  .join(', ')}
-                {peak.overCapQuarters.length > 3 ? '...' : ''}.
-              </span>
+              <AlertTriangle className="h-3 w-3 text-red-600" />
             ) : (
-              <span>No early relinquishment: active roles stay locked until project end date.</span>
+              <Lock className="h-3 w-3 text-slate-400" />
             )}
+            <span>{peak.overCapQuarters.length > 0 ? 'Over Cap Warning' : 'Point Lock Rule'}</span>
+          </div>
+          {peak.overCapQuarters.length > 0 ? (
+            <div className="mt-0.5 text-[11px] font-semibold text-red-700 leading-snug tabular-nums">
+              Exceeds {rules.hardCap} pts in {peak.overCapQuarters.length} qtr
+              {peak.overCapQuarters.length === 1 ? '' : 's'} (
+              {peak.overCapQuarters
+                .slice(0, 3)
+                .map((q) => formatQuarterShort(q.quarter))
+                .join(', ')}
+              {peak.overCapQuarters.length > 3 ? '...' : ''}).
+            </div>
+          ) : (
+            <div className="mt-0.5 text-xs font-medium text-slate-800">
+              No early relinquishment
+            </div>
+          )}
+          <div className="mt-0.5 text-[11px] text-slate-500 leading-snug">
+            Active projects &amp; roles stay locked until project end date.
           </div>
         </div>
       </div>

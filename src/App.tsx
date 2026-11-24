@@ -6,6 +6,7 @@ import {
   Copy,
   GitCompareArrows,
   Info,
+  Lock,
   Menu,
   Monitor,
   Pencil,
@@ -48,7 +49,6 @@ import {
   createId,
   type StarterTemplateDefinition,
 } from './engine/templates';
-import { formatQuarterShort } from './engine/quarters';
 import { loadWorkspaceState, saveWorkspaceState } from './utils/storage';
 import { decodeShareHash, type SharedPlanPayload } from './utils/shareLink';
 import { registerWebMcpTools, type WebMcpRegistrationStatus, WEBMCP_TOOL_NAMES } from './utils/webmcp';
@@ -74,6 +74,8 @@ export default function App() {
   // Modals / Drawers
   const [grantModalOpen, setGrantModalOpen] = useState(false);
   const [editingGrant, setEditingGrant] = useState<GrantEntry | null>(null);
+  const [grantModalTargetProfileId, setGrantModalTargetProfileId] = useState<string | null>(null);
+  const [rightTab, setRightTab] = useState<'what-fits' | 'team'>('what-fits');
   const [eligibilityOpen, setEligibilityOpen] = useState(false);
   const [templatesOpen, setTemplatesOpen] = useState(false);
   const [compareOpen, setCompareOpen] = useState(false);
@@ -389,8 +391,6 @@ export default function App() {
   const handleAddCollaborator = (name: string, importedPlan?: SharedPlanPayload) => {
     setWorkspace((prev) => {
       if (!prev) return prev;
-      const coCiCount = prev.profiles.filter((p) => !p.isPrimary).length;
-      if (coCiCount >= 3) return prev;
       const scenId = createId('scen');
       const newProfile: ResearcherProfile = {
         id: createId('profile'),
@@ -414,7 +414,8 @@ export default function App() {
       return {
         ...prev,
         profiles: [...prev.profiles, newProfile],
-        activeProfileId: newProfile.id,
+        // Keep the user on their own timeline when importing/adding a Co-CI so their screen does not jump unexpectedly
+        activeProfileId: prev.activeProfileId,
       };
     });
   };
@@ -428,6 +429,53 @@ export default function App() {
         profiles: nextProfiles,
         activeProfileId:
           prev.activeProfileId === profileId ? nextProfiles[0].id : prev.activeProfileId,
+      };
+    });
+  };
+
+  const handleSaveCollaboratorGrant = useCallback((profileId: string, grant: GrantEntry) => {
+    setWorkspace((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        profiles: prev.profiles.map((p) =>
+          p.id === profileId
+            ? {
+                ...p,
+                scenarios: p.scenarios.map((s) => {
+                  if (s.id !== p.activeScenarioId) return s;
+                  const exists = s.grants.some((g) => g.id === grant.id);
+                  return {
+                    ...s,
+                    grants: exists
+                      ? s.grants.map((g) => (g.id === grant.id ? grant : g))
+                      : [...s.grants, grant],
+                  };
+                }),
+              }
+            : p,
+        ),
+      };
+    });
+  }, []);
+
+  const handleRemoveCollaboratorGrant = (profileId: string, grantId: string) => {
+    setWorkspace((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        profiles: prev.profiles.map((p) =>
+          p.id === profileId
+            ? {
+                ...p,
+                scenarios: p.scenarios.map((s) =>
+                  s.id === p.activeScenarioId
+                    ? { ...s, grants: s.grants.filter((g) => g.id !== grantId) }
+                    : s,
+                ),
+              }
+            : p,
+        ),
       };
     });
   };
@@ -457,6 +505,7 @@ export default function App() {
         ? `${pendingSharedPlan.scenarioName} (Co-CI)`
         : `Co-CI ${coCiCount + 1}`;
     handleAddCollaborator(label, pendingSharedPlan);
+    setRightTab('team');
     setPendingSharedPlan(null);
     window.history.replaceState(null, '', window.location.pathname + window.location.search);
   };
@@ -652,6 +701,13 @@ export default function App() {
     );
   }
 
+  const primaryProfile =
+    workspace.profiles.find((p) => p.isPrimary) ?? workspace.profiles[0];
+  const primaryActiveScenario =
+    primaryProfile.scenarios.find((s) => s.id === primaryProfile.activeScenarioId) ??
+    primaryProfile.scenarios[0];
+  const primaryGrants = primaryActiveScenario?.grants ?? [];
+
   const selectedLoad =
     quarterlyLoads.find((l) => l.quarter === workspace.selectedQuarter) ?? quarterlyLoads[0];
   const overridesActive = hasActiveOverrides(workspace.customOverrides);
@@ -674,50 +730,27 @@ export default function App() {
               </h1>
             </div>
 
-            {/* Live X / 13 Counter Pill */}
+            {/* Mobile compact point readout (< md) + Desktop Over-Cap alert ONLY when breaching cap */}
             <div
-              className={`inline-flex items-center gap-1.5 rounded-full border px-2 sm:px-2.5 py-0.5 font-mono text-[11px] tabular-nums whitespace-nowrap shrink-0 ${
+              className={`inline-flex md:hidden items-center gap-1.5 rounded-full border px-2 py-0.5 font-mono text-[11px] tabular-nums whitespace-nowrap shrink-0 ${
                 peakSummary.overCapQuarters.length > 0
                   ? 'border-red-300 bg-red-50 text-red-800'
                   : 'border-slate-200 bg-slate-50 text-slate-800'
               }`}
-              title={`Selected quarter (${formatQuarterShort(workspace.selectedQuarter)}): ${selectedLoad?.totalPoints ?? 0}/${effectiveRules.hardCap} pts. Peak across 2027-2032: ${peakSummary.peakPoints}/${effectiveRules.hardCap} pts.`}
             >
               <span className="font-bold">
                 {selectedLoad?.totalPoints ?? 0}/{effectiveRules.hardCap} pts
               </span>
-              <span className="hidden sm:inline text-slate-300">|</span>
-              <span className="hidden sm:inline">
-                Peak {peakSummary.peakPoints}/{effectiveRules.hardCap}
-              </span>
               {peakSummary.overCapQuarters.length > 0 && (
-                <span className="inline-flex items-center gap-0.5 font-sans text-[10px] font-semibold text-red-700">
-                  <AlertTriangle className="h-3 w-3" />
-                  <span className="hidden sm:inline">Over Cap</span>
-                </span>
+                <AlertTriangle className="h-3 w-3 text-red-700" />
               )}
             </div>
 
-            {/* Desktop Profile Switcher (shown on xl+ when Co-CI collaborators exist; < xl uses Team panel or mobile menu) */}
-            {workspace.profiles.length > 1 && (
-              <div className="no-print hidden xl:flex items-center gap-0.5 rounded-md border border-slate-200 bg-slate-50 p-0.5 text-[11px]">
-                {workspace.profiles.map((p) => (
-                  <button
-                    key={p.id}
-                    type="button"
-                    onClick={() =>
-                      setWorkspace((prev) => (prev ? { ...prev, activeProfileId: p.id } : prev))
-                    }
-                    className={`rounded px-2 py-0.5 font-medium cursor-pointer arc-state-transition ${
-                      p.id === workspace.activeProfileId
-                        ? 'bg-white text-slate-900 shadow-2xs'
-                        : 'text-slate-600 hover:text-slate-900'
-                    }`}
-                  >
-                    {p.name}
-                  </button>
-                ))}
-              </div>
+            {peakSummary.overCapQuarters.length > 0 && (
+              <span className="hidden md:inline-flex items-center gap-1 rounded-full border border-red-300 bg-red-50 px-2.5 py-0.5 font-mono text-[11px] font-semibold text-red-800 tabular-nums whitespace-nowrap shrink-0">
+                <AlertTriangle className="h-3 w-3 text-red-700" />
+                Over Cap ({peakSummary.peakPoints}/{effectiveRules.hardCap})
+              </span>
             )}
           </div>
 
@@ -726,6 +759,7 @@ export default function App() {
             <button
               type="button"
               onClick={() => {
+                setGrantModalTargetProfileId(null);
                 setEditingGrant(null);
                 setGrantModalOpen(true);
               }}
@@ -750,20 +784,8 @@ export default function App() {
             </button>
           </div>
 
-          {/* Desktop Action Controls (md+) */}
+          {/* Desktop Global Tools Bar (md+) */}
           <div className="no-print hidden md:flex flex-wrap items-center gap-1.5 text-[11px]">
-            <button
-              type="button"
-              onClick={() => {
-                setEditingGrant(null);
-                setGrantModalOpen(true);
-              }}
-              className="inline-flex items-center gap-1 rounded-md bg-slate-900 px-2.5 py-1.5 font-semibold text-white hover:bg-slate-800 cursor-pointer"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              Add Grant
-            </button>
-
             <button
               type="button"
               onClick={() => setTemplatesOpen(true)}
@@ -1037,25 +1059,51 @@ export default function App() {
               </button>
             </div>
 
-            {/* Concise Disclaimer + No Early Relinquishment Notice */}
-            <div className="hidden sm:flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
-              <span className="inline-flex items-center gap-1 text-slate-700 font-medium">
-                <Info className="h-3 w-3 text-slate-400" />
-                No early relinquishment of active grants
-              </span>
-              <span className="text-slate-300">|</span>
-              <span>
-                Unofficial tool · Rules verified <strong>{effectiveRules.verifiedDisplay}</strong> ·
-                Verify against Grant Guidelines &amp; RMS
-              </span>
-              <button
-                type="button"
-                onClick={() => setDocsDrawerOpen(true)}
-                className="no-print font-medium text-slate-700 underline decoration-slate-300 hover:text-slate-950 cursor-pointer"
-              >
-                Official ARC Docs
-              </button>
-            </div>
+            {/* Right side of Scenario Strip: Profile Switcher (when Co-CIs exist) */}
+            {workspace.profiles.length > 1 && (
+              <div className="no-print hidden md:flex items-center gap-1.5 shrink-0">
+                <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                  Profile:
+                </span>
+                {workspace.profiles.length <= 4 ? (
+                  <div className="inline-flex items-center gap-0.5 rounded-md border border-slate-200 bg-white p-0.5 text-[11px]">
+                    {workspace.profiles.map((p) => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() =>
+                          setWorkspace((prev) => (prev ? { ...prev, activeProfileId: p.id } : prev))
+                        }
+                        className={`rounded px-2 py-0.5 font-medium cursor-pointer arc-state-transition ${
+                          p.id === workspace.activeProfileId
+                            ? 'bg-slate-900 text-white'
+                            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                        }`}
+                      >
+                        {p.name}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <select
+                    aria-label="Active researcher profile"
+                    value={workspace.activeProfileId}
+                    onChange={(e) =>
+                      setWorkspace((prev) =>
+                        prev ? { ...prev, activeProfileId: e.target.value } : prev,
+                      )
+                    }
+                    className="rounded-md border border-slate-300 bg-white px-2 py-0.5 text-[11px] font-medium text-slate-800 cursor-pointer"
+                  >
+                    {workspace.profiles.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </header>
@@ -1118,6 +1166,7 @@ export default function App() {
             </button>
           </div>
         )}
+
         {/* Rules Version Update Notice Banner (Preserves Returning User's Saved Plan Safely) */}
         {outdatedFromVersion && (
           <div
@@ -1175,15 +1224,13 @@ export default function App() {
               >
                 Import as My Scenario
               </button>
-              {workspace.profiles.filter((p) => !p.isPrimary).length < 3 && (
-                <button
-                  type="button"
-                  onClick={handleImportSharedPlanAsCoCi}
-                  className="rounded border border-teal-700 bg-white px-3 py-1 text-[11px] font-semibold text-teal-900 hover:bg-teal-100 cursor-pointer"
-                >
-                  Import as Co-CI Profile
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={handleImportSharedPlanAsCoCi}
+                className="rounded border border-teal-700 bg-white px-3 py-1 text-[11px] font-semibold text-teal-900 hover:bg-teal-100 cursor-pointer"
+              >
+                Import as Co-CI Profile
+              </button>
               <button
                 type="button"
                 onClick={handleDismissSharedPlan}
@@ -1249,11 +1296,13 @@ export default function App() {
               }
               onToggleOutcome={handleToggleOutcome}
               onEditGrant={(grant) => {
+                setGrantModalTargetProfileId(null);
                 setEditingGrant(grant);
                 setGrantModalOpen(true);
               }}
               onRemoveGrant={handleRemoveGrant}
               onOpenAddGrant={() => {
+                setGrantModalTargetProfileId(null);
                 setEditingGrant(null);
                 setGrantModalOpen(true);
               }}
@@ -1267,39 +1316,118 @@ export default function App() {
             />
           </div>
 
-          {/* Right Rail: "What Fits?" Helper + Collaborator Point Check */}
-          <div className="space-y-3">
-            <WhatFitsHelper
-              grants={activeScenario.grants}
-              rules={effectiveRules}
-              loads={quarterlyLoads}
-              eligibility={activeProfile.eligibility}
-              selectedQuarter={workspace.selectedQuarter}
-              onSelectQuarter={(q) =>
-                setWorkspace((prev) => (prev ? { ...prev, selectedQuarter: q } : prev))
-              }
-              onQuickAdd={handleQuickAddOption}
-            />
+          {/* Unified Two-Tab Right Panel: "What Fits?" | "Team / Co-CI" */}
+          <div className="no-print rounded-lg border border-slate-200 bg-white shadow-xs overflow-hidden">
+            <div
+              role="tablist"
+              aria-label="Planning Assistant Tabs"
+              className="grid grid-cols-2 border-b border-slate-200 bg-slate-50/90 text-xs"
+            >
+              <button
+                type="button"
+                role="tab"
+                aria-selected={rightTab === 'what-fits'}
+                onClick={() => setRightTab('what-fits')}
+                className={`flex items-center justify-center gap-1.5 border-b-2 px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wide cursor-pointer arc-state-transition ${
+                  rightTab === 'what-fits'
+                    ? 'border-slate-900 bg-white text-slate-900'
+                    : 'border-transparent text-slate-500 hover:bg-slate-100/70 hover:text-slate-800'
+                }`}
+              >
+                <span>What Fits?</span>
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={rightTab === 'team'}
+                onClick={() => setRightTab('team')}
+                className={`flex items-center justify-center gap-1.5 border-b-2 px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wide cursor-pointer arc-state-transition ${
+                  rightTab === 'team'
+                    ? 'border-slate-900 bg-white text-slate-900'
+                    : 'border-transparent text-slate-500 hover:bg-slate-100/70 hover:text-slate-800'
+                }`}
+              >
+                <Users className="h-3.5 w-3.5 shrink-0" />
+                <span>Team / Co-CI</span>
+                {workspace.profiles.filter((p) => !p.isPrimary).length > 0 && (
+                  <span className="rounded-full bg-slate-200 px-1.5 py-0.2 font-mono text-[10px] font-semibold text-slate-700 tabular-nums">
+                    {workspace.profiles.filter((p) => !p.isPrimary).length}
+                  </span>
+                )}
+              </button>
+            </div>
 
-            <CollaboratorCheckCard
-              profiles={workspace.profiles}
-              activeProfileId={workspace.activeProfileId}
-              rules={effectiveRules}
-              selectedQuarter={workspace.selectedQuarter}
-              onSelectProfile={(id) =>
-                setWorkspace((prev) => (prev ? { ...prev, activeProfileId: id } : prev))
-              }
-              onAddCollaborator={handleAddCollaborator}
-              onRemoveCollaborator={handleRemoveCollaborator}
-            />
+            {rightTab === 'what-fits' ? (
+              <WhatFitsHelper
+                embedded
+                grants={activeScenario.grants}
+                rules={effectiveRules}
+                loads={quarterlyLoads}
+                eligibility={activeProfile.eligibility}
+                selectedQuarter={workspace.selectedQuarter}
+                onSelectQuarter={(q) =>
+                  setWorkspace((prev) => (prev ? { ...prev, selectedQuarter: q } : prev))
+                }
+                onQuickAdd={handleQuickAddOption}
+              />
+            ) : (
+              <CollaboratorCheckCard
+                embedded
+                profiles={workspace.profiles}
+                activeProfileId={workspace.activeProfileId}
+                primaryGrants={primaryGrants}
+                rules={effectiveRules}
+                selectedQuarter={workspace.selectedQuarter}
+                onSelectProfile={(id) =>
+                  setWorkspace((prev) => (prev ? { ...prev, activeProfileId: id } : prev))
+                }
+                onAddCollaborator={handleAddCollaborator}
+                onRemoveCollaborator={handleRemoveCollaborator}
+                onOpenAddCollaboratorGrant={(profile) => {
+                  setGrantModalTargetProfileId(profile.id);
+                  setEditingGrant(null);
+                  setGrantModalOpen(true);
+                }}
+                onOpenEditCollaboratorGrant={(profile, grant) => {
+                  setGrantModalTargetProfileId(profile.id);
+                  setEditingGrant(grant);
+                  setGrantModalOpen(true);
+                }}
+                onRemoveCollaboratorGrant={handleRemoveCollaboratorGrant}
+              />
+            )}
           </div>
         </div>
       </main>
 
-      {/* Quiet Workbench Footer (Branding, Author, GitHub Badge, Static Endpoints) */}
-      <footer className="no-print border-t border-slate-200 bg-white/80">
-        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-2 px-3.5 py-2.5 text-[11px] text-slate-500">
-          <div className="flex flex-wrap items-center gap-2">
+      {/* Structured Workbench Footer (Privacy Badge, Attribution, Source, Endpoints) */}
+      <footer className="no-print border-t border-slate-200 bg-white/90">
+        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-x-4 gap-y-2 px-3.5 py-2.5 text-[11px] text-slate-500">
+          {/* Left: Privacy Badge + Unofficial Rules Version */}
+          <div className="flex flex-wrap items-center gap-2.5">
+            <button
+              type="button"
+              onClick={() => setDocsDrawerOpen(true)}
+              title="All plans stay in your browser localStorage. Zero server storage, cookies, or analytics. Click for Privacy & Docs."
+              className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50/80 px-2.5 py-0.5 text-[10px] font-semibold text-emerald-800 hover:bg-emerald-100/80 cursor-pointer arc-state-transition"
+            >
+              <Lock className="h-2.5 w-2.5 shrink-0" />
+              <span>Local-only &amp; Private</span>
+            </button>
+
+            <span className="inline-flex items-center gap-1.5 text-slate-500">
+              <Info className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+              <span>
+                Unofficial ARC NCGP planner (Rules{' '}
+                <span className="font-mono text-slate-700">v{effectiveRules.version}</span>,{' '}
+                {effectiveRules.verifiedDisplay}). Please verify against final ARC Grant Guidelines
+                &amp; RMS.
+              </span>
+            </span>
+          </div>
+
+          {/* Right: Author, GitHub Badge, Machine-Readable Endpoints & Docs */}
+          <div className="flex flex-wrap items-center gap-2.5">
             {effectiveRules.projectMeta && (
               <>
                 <span>
@@ -1313,64 +1441,82 @@ export default function App() {
                     {effectiveRules.projectMeta.authorName}
                   </a>
                 </span>
-                <span className="text-slate-300">&middot;</span>
                 <a
                   href={effectiveRules.projectMeta.githubUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 font-mono text-[10px] font-medium text-slate-700 hover:border-slate-300 hover:bg-slate-100 hover:text-slate-950 arc-state-transition"
                 >
-                  <GitHubIcon className="h-3 w-3" />
-                  <span>{effectiveRules.projectMeta.githubLabel}</span>
+                  <GitHubIcon className="h-3 w-3 shrink-0" />
+                  <span>GitHub</span>
                 </a>
-                <span className="text-slate-300">&middot;</span>
+                <span className="hidden sm:inline text-slate-300">|</span>
               </>
             )}
-            <span>Local-only in your browser (zero server storage)</span>
-          </div>
 
-          <div className="flex flex-wrap items-center gap-3">
-            <a
-              href="./rules.json"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-mono hover:text-slate-900 underline decoration-slate-300"
-            >
-              rules.json (v{effectiveRules.version})
-            </a>
-            <a
-              href="./llms.txt"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-mono hover:text-slate-900 underline decoration-slate-300"
-            >
-              llms.txt
-            </a>
-            <button
-              type="button"
-              onClick={() => setDocsDrawerOpen(true)}
-              className="font-medium text-slate-700 hover:text-slate-950 underline decoration-slate-300 cursor-pointer"
-            >
-              About, Privacy &amp; ARC Docs
-            </button>
+            <div className="flex items-center gap-2.5">
+              <a
+                href="./rules.json"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-mono hover:text-slate-900 underline decoration-slate-300"
+              >
+                rules.json
+              </a>
+              <a
+                href="./llms.txt"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-mono hover:text-slate-900 underline decoration-slate-300"
+              >
+                llms.txt
+              </a>
+              <button
+                type="button"
+                onClick={() => setDocsDrawerOpen(true)}
+                className="font-medium text-slate-700 hover:text-slate-950 underline decoration-slate-300 cursor-pointer"
+              >
+                Privacy &amp; Docs
+              </button>
+            </div>
           </div>
         </div>
       </footer>
 
       {/* Modals & Drawers */}
-      <GrantFormModal
-        open={grantModalOpen}
-        onClose={() => {
-          setGrantModalOpen(false);
-          setEditingGrant(null);
-        }}
-        rules={effectiveRules}
-        eligibility={activeProfile.eligibility}
-        existingGrants={activeScenario.grants}
-        editingGrant={editingGrant}
-        defaultQuarter={workspace.selectedQuarter}
-        onSave={handleSaveGrant}
-      />
+      {(() => {
+        const targetCoCi = grantModalTargetProfileId
+          ? workspace.profiles.find((p) => p.id === grantModalTargetProfileId)
+          : undefined;
+        const targetCoCiScenario = targetCoCi
+          ? (targetCoCi.scenarios.find((s) => s.id === targetCoCi.activeScenarioId) ??
+            targetCoCi.scenarios[0])
+          : undefined;
+
+        return (
+          <GrantFormModal
+            open={grantModalOpen}
+            onClose={() => {
+              setGrantModalOpen(false);
+              setEditingGrant(null);
+              setGrantModalTargetProfileId(null);
+            }}
+            rules={effectiveRules}
+            eligibility={targetCoCi ? targetCoCi.eligibility : activeProfile.eligibility}
+            existingGrants={targetCoCiScenario ? targetCoCiScenario.grants : activeScenario.grants}
+            editingGrant={editingGrant}
+            defaultQuarter={workspace.selectedQuarter}
+            targetProfileName={targetCoCi?.name}
+            onSave={(grant) => {
+              if (targetCoCi) {
+                handleSaveCollaboratorGrant(targetCoCi.id, grant);
+              } else {
+                handleSaveGrant(grant);
+              }
+            }}
+          />
+        );
+      })()}
 
       <EligibilityModal
         open={eligibilityOpen}

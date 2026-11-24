@@ -20,6 +20,7 @@ interface WhatFitsHelperProps {
   selectedQuarter: QuarterKey;
   onSelectQuarter: (q: QuarterKey) => void;
   onQuickAdd: (option: FittingRoleOption) => void;
+  embedded?: boolean;
 }
 
 export function WhatFitsHelper({
@@ -30,6 +31,7 @@ export function WhatFitsHelper({
   selectedQuarter,
   onSelectQuarter,
   onQuickAdd,
+  embedded = false,
 }: WhatFitsHelperProps) {
   const [onlyEligible, setOnlyEligible] = useState(true);
   const [onlyCleanPeak, setOnlyCleanPeak] = useState(false);
@@ -64,13 +66,26 @@ export function WhatFitsHelper({
   return (
     <aside
       aria-label="What Fits My Remaining Points Helper"
-      className="no-print flex flex-col rounded-lg border border-slate-200 bg-white shadow-xs overflow-hidden"
+      className={
+        embedded
+          ? 'no-print flex flex-col'
+          : 'no-print flex flex-col rounded-lg border border-slate-200 bg-white shadow-xs overflow-hidden'
+      }
     >
-      <div className="border-b border-slate-200 bg-slate-50/80 px-3.5 py-2.5">
+      <div className="border-b border-slate-200 bg-slate-50/60 px-3.5 py-2.5">
         <div className="flex items-center justify-between gap-2">
-          <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-800">
-            What Fits My Remaining Points?
-          </h2>
+          {embedded ? (
+            <span className="text-[11px] font-medium text-slate-600">
+              Load in <strong className="text-slate-900">{formatQuarterShort(selectedQuarter)}</strong>:{' '}
+              <span className="font-mono tabular-nums">
+                {currentPoints}/{rules.hardCap} pts
+              </span>
+            </span>
+          ) : (
+            <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-800">
+              What Fits My Remaining Points?
+            </h2>
+          )}
           <select
             aria-label="Target quarter for fitting roles"
             value={selectedQuarter}
@@ -85,13 +100,19 @@ export function WhatFitsHelper({
           </select>
         </div>
 
-        <div className="mt-2 flex items-center justify-between text-xs tabular-nums">
-          <span className="text-slate-600">
-            Load in <strong>{formatQuarterShort(selectedQuarter)}</strong>: {currentPoints}/
-            {rules.hardCap} pts
-          </span>
+        <div className="mt-2 flex items-center justify-between gap-2 text-xs tabular-nums">
+          {embedded ? (
+            <span className="text-[11px] text-slate-500">
+              Roles up to {remainingPoints} {ptsWord} at next open round
+            </span>
+          ) : (
+            <span className="text-slate-600">
+              Load in <strong>{formatQuarterShort(selectedQuarter)}</strong>: {currentPoints}/
+              {rules.hardCap} pts
+            </span>
+          )}
           <span
-            className={`rounded-full px-2 py-0.5 font-mono text-[11px] font-semibold ${
+            className={`shrink-0 rounded-full px-2 py-0.5 font-mono text-[11px] font-semibold ${
               remainingPoints < minRolePoints
                 ? 'bg-red-50 text-red-700 border border-red-200'
                 : remainingPoints <= 3
@@ -103,9 +124,11 @@ export function WhatFitsHelper({
           </span>
         </div>
 
-        <p className="mt-1.5 text-[11px] text-slate-500">
-          Valid roles up to {remainingPoints} {ptsWord}, scheduled at each scheme&apos;s next open round.
-        </p>
+        {!embedded && (
+          <p className="mt-1.5 text-[11px] text-slate-500">
+            Valid roles up to {remainingPoints} {ptsWord}, scheduled at each scheme&apos;s next open round.
+          </p>
+        )}
 
         <div className="mt-2 flex flex-wrap items-center gap-3 text-[11px] text-slate-600">
           <label className="inline-flex items-center gap-1.5 cursor-pointer">

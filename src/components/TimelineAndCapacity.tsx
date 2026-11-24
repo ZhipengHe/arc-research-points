@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import {
   AlertTriangle,
+  ArrowLeftRight,
   ExternalLink,
   Lock,
   Pencil,
@@ -17,6 +18,7 @@ import type {
 } from '../types/arc';
 import {
   computeEcrCutoffDate,
+  computePostPhdCutoffDate,
   dateToTimelineFraction,
   formatDateShort,
   formatQuarterShort,
@@ -83,6 +85,21 @@ export function TimelineAndCapacity({
   const ecrFraction = ecrCutoffDate
     ? dateToTimelineFraction(
         ecrCutoffDate,
+        rules.timelineWindow.startYear,
+        rules.timelineWindow.endYear,
+      )
+    : null;
+
+  const indigenousCutoffDate = eligibility.isIndigenousResearcher
+    ? computePostPhdCutoffDate(
+        eligibility.phdConferralDate,
+        eligibility.careerInterruptionMonths,
+        rules.indigenousMaxPostPhdYears,
+      )
+    : null;
+  const indigenousFraction = indigenousCutoffDate
+    ? dateToTimelineFraction(
+        indigenousCutoffDate,
         rules.timelineWindow.startYear,
         rules.timelineWindow.endYear,
       )
@@ -160,10 +177,17 @@ export function TimelineAndCapacity({
             <span className="h-0.5 w-3.5 bg-red-600" />
             {rules.hardCap}-pt Cap
           </span>
-          {ecrCutoffDate && (
+          {ecrCutoffDate && ecrFraction !== null && (
             <span className="inline-flex items-center gap-1.5 text-violet-700">
               <span className="h-3 border-l border-dashed border-violet-600" />
-              ECR Cutoff ({formatDateShort(ecrCutoffDate)})
+              ECR 5yr Cutoff ({formatDateShort(ecrCutoffDate)})
+            </span>
+          )}
+          {indigenousCutoffDate && indigenousFraction !== null && (
+            <span className="inline-flex items-center gap-1.5 text-amber-800">
+              <span className="h-3 border-l border-dashed border-amber-600" />
+              Indig. {rules.indigenousMaxPostPhdYears}yr Cutoff (
+              {formatDateShort(indigenousCutoffDate)})
             </span>
           )}
         </div>
@@ -221,7 +245,7 @@ export function TimelineAndCapacity({
                       style={{ bottom: `${capLineBottomPct}%` }}
                       className="pointer-events-none absolute inset-x-0 z-10 border-t-[1.5px] border-dashed border-red-600"
                     >
-                      <span className="absolute -top-4 right-1 rounded bg-red-600 px-1 py-0.5 font-mono text-[9px] font-semibold text-white tabular-nums">
+                      <span className="absolute bottom-[3px] right-1 rounded bg-red-600 px-1.5 py-0.5 font-mono text-[9px] font-semibold leading-none text-white tabular-nums shadow-2xs">
                         {rules.hardCap}-pt cap
                       </span>
                     </div>
@@ -233,6 +257,17 @@ export function TimelineAndCapacity({
                       >
                         <span className="absolute -top-4 left-1 whitespace-nowrap rounded bg-violet-50/95 px-1 py-0.5 text-[9px] font-semibold text-violet-800 border border-violet-200 leading-none">
                           ECR 5yr
+                        </span>
+                      </div>
+                    )}
+                    {indigenousFraction !== null && (
+                      <div
+                        aria-hidden="true"
+                        style={{ left: `${indigenousFraction * 100}%` }}
+                        className="pointer-events-none absolute inset-y-0 z-10 border-l-2 border-dashed border-amber-600/80"
+                      >
+                        <span className="absolute -top-4 left-1 whitespace-nowrap rounded bg-amber-50/95 px-1 py-0.5 text-[9px] font-semibold text-amber-900 border border-amber-300 leading-none">
+                          Indig. {rules.indigenousMaxPostPhdYears}yr
                         </span>
                       </div>
                     )}
@@ -259,11 +294,11 @@ export function TimelineAndCapacity({
                             }`}
                           >
                             <span
-                              className={`mb-0.5 font-mono text-[9px] leading-none tabular-nums ${
+                              className={`relative z-20 mb-0.5 rounded-[2px] px-0.5 font-mono text-[9px] leading-none tabular-nums ${
                                 load.isOverCap
-                                  ? 'font-bold text-red-700'
+                                  ? 'bg-red-50/95 font-bold text-red-700'
                                   : load.totalPoints > 0
-                                    ? 'font-semibold text-slate-700'
+                                    ? 'bg-slate-50/95 font-semibold text-slate-700'
                                     : 'text-slate-300'
                               }`}
                             >
@@ -328,17 +363,14 @@ export function TimelineAndCapacity({
 
             {/* Mobile Touch-Friendly Grant Cards */}
             {grants.length === 0 ? (
-              <div className="p-5 text-center text-xs text-slate-500 space-y-2.5">
-                <p>Empty pipeline (0 / {rules.hardCap} pts).</p>
-                <button
-                  type="button"
-                  onClick={onOpenAddGrant}
-                  className="inline-flex items-center gap-1 rounded-md bg-slate-900 px-3.5 py-2 font-semibold text-white cursor-pointer"
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                  Add your first grant
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={onOpenAddGrant}
+                className="flex w-full items-center gap-2 px-3.5 py-3 text-left text-xs font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 cursor-pointer"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                <span>Add a grant or legacy project...</span>
+              </button>
             ) : (
               <div className="divide-y divide-slate-100">
                 {grants.map((grant) => {
@@ -448,6 +480,7 @@ export function TimelineAndCapacity({
                                 }`}
                               />
                               {grant.outcome === 'funded' ? 'If Funded' : 'If Unfunded'}
+                              <ArrowLeftRight className="h-2.5 w-2.5 opacity-55" />
                             </button>
                           )}
                         </div>
@@ -506,13 +539,18 @@ export function TimelineAndCapacity({
         <div className="min-w-[880px]">
           {/* Year & Quarter Header Row */}
           <div className="grid grid-cols-[308px_1fr] border-b border-slate-200 bg-slate-50/50">
-            <div className="flex items-end justify-between border-r border-slate-200 px-3 py-1.5">
+            <div className="flex items-center justify-between border-r border-slate-200 px-3 py-1.5">
               <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
                 Pipeline ({grants.length})
               </span>
-              <span className="no-print text-[10px] font-medium text-slate-400">
-                Click outcome to test Plan B
-              </span>
+              <button
+                type="button"
+                onClick={onOpenAddGrant}
+                className="no-print inline-flex items-center gap-1 rounded-md bg-slate-900 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-slate-800 cursor-pointer arc-state-transition"
+              >
+                <Plus className="h-3 w-3" />
+                Add Grant
+              </button>
             </div>
             <div className="relative">
               {/* Year labels */}
@@ -561,26 +599,10 @@ export function TimelineAndCapacity({
           </div>
 
           {/* Gantt Timeline Body */}
-          <div className="relative">
-            {grants.length === 0 ? (
-              <div className="grid grid-cols-[308px_1fr] border-b border-slate-200">
-                <div className="border-r border-slate-200 px-3 py-7 text-xs text-slate-500">
-                  Empty pipeline (0 / {rules.hardCap} pts).
-                </div>
-                <div className="flex items-center justify-center py-7 text-xs text-slate-500 gap-2.5">
-                  <span>Add a grant from the right panel or</span>
-                  <button
-                    type="button"
-                    onClick={onOpenAddGrant}
-                    className="inline-flex items-center gap-1 rounded-md bg-slate-900 px-3 py-1.5 font-semibold text-white hover:bg-slate-800 cursor-pointer"
-                  >
-                    <Plus className="h-3.5 w-3.5" />
-                    Add your first grant
-                  </button>
-                </div>
-              </div>
-            ) : (
-              grants.map((grant) => {
+          <div>
+            {grants.length > 0 && (
+              <div className="relative">
+                {grants.map((grant) => {
                 const scheme = grant.isLegacy
                   ? getLegacySchemeById(rules, grant.schemeId)
                   : getSchemeById(rules, grant.schemeId);
@@ -675,6 +697,7 @@ export function TimelineAndCapacity({
                                 }`}
                               />
                               {grant.outcome === 'funded' ? 'If Funded' : 'If Unfunded'}
+                              <ArrowLeftRight className="h-2.5 w-2.5 opacity-55" />
                             </button>
                           )}
                         </div>
@@ -861,26 +884,67 @@ export function TimelineAndCapacity({
                     </div>
                   </div>
                 );
-              })
-            )}
+              })}
 
-            {/* ECR 5-Year Cutoff Vertical Dashed Line across Gantt */}
-            {ecrFraction !== null && (
-              <div
-                aria-hidden="true"
-                className="pointer-events-none absolute inset-y-0 left-[308px] right-0"
-              >
-                <div
-                  style={{ left: `${ecrFraction * 100}%` }}
-                  className="absolute inset-y-0 border-l-2 border-dashed border-violet-600/80"
-                />
+                {/* ECR 5-Year & Indigenous 15-Year Cutoff Vertical Dashed Lines across Gantt grant rows only */}
+                {ecrFraction !== null && (
+                  <div
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-y-0 left-[308px] right-0"
+                  >
+                    <div
+                      style={{ left: `${ecrFraction * 100}%` }}
+                      className="absolute inset-y-0 border-l-2 border-dashed border-violet-600/80"
+                    />
+                  </div>
+                )}
+                {indigenousFraction !== null && (
+                  <div
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-y-0 left-[308px] right-0"
+                  >
+                    <div
+                      style={{ left: `${indigenousFraction * 100}%` }}
+                      className="absolute inset-y-0 border-l-2 border-dashed border-amber-600/80"
+                    />
+                  </div>
+                )}
               </div>
             )}
+
+            {/* Consistent inline "+ Add grant" row for both empty and populated pipelines */}
+            <div className="no-print grid grid-cols-[308px_1fr] border-b border-slate-100 bg-slate-50/30">
+              <button
+                type="button"
+                onClick={onOpenAddGrant}
+                className="flex items-center gap-1.5 border-r border-slate-200 px-3 py-2 text-left text-[11px] font-medium text-slate-500 hover:bg-slate-100/80 hover:text-slate-900 cursor-pointer arc-state-transition"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                <span>
+                  {grants.length === 0
+                    ? 'Add a grant or legacy project...'
+                    : 'Add another grant or legacy project...'}
+                </span>
+              </button>
+              <div aria-hidden="true" className="grid grid-cols-24">
+                {loads.map((load) => {
+                  const { q } = parseQuarter(load.quarter);
+                  return (
+                    <div
+                      key={load.quarter}
+                      className={`border-r last:border-r-0 ${
+                        q === 4 ? 'border-slate-200/70' : 'border-slate-100/60'
+                      }`}
+                    />
+                  );
+                })}
+              </div>
+            </div>
           </div>
 
           {/* Stacked Quarterly Capacity Bar Chart (exact same 24-col grid!) */}
           <div className="grid grid-cols-[308px_1fr] border-t-2 border-slate-200 bg-slate-50/40">
-            <div className="flex flex-col justify-between border-r border-slate-200 px-3 py-3">
+            <div className="relative flex flex-col justify-between border-r border-slate-200 px-3 py-3">
               <div>
                 <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-600">
                   Quarterly Point Load
@@ -912,18 +976,18 @@ export function TimelineAndCapacity({
             {/* Chart Plot Area: padding-top reserves space for bar labels; cap line & bars share exact inner plot height */}
             <div className="pt-5 pb-1 select-none">
               <div className="relative h-36">
-                {/* Red 13-Point Threshold Line */}
+                {/* Red 13-Point Threshold Line + Axis Badge anchored cleanly to left edge outside bars */}
                 <div
                   aria-hidden="true"
                   style={{ bottom: `${capLineBottomPct}%` }}
                   className="pointer-events-none absolute inset-x-0 z-10 border-t-[1.5px] border-dashed border-red-600"
                 >
-                  <span className="absolute -top-4 right-1.5 rounded bg-red-600 px-1.5 py-0.5 font-mono text-[9px] font-semibold text-white tabular-nums">
+                  <span className="absolute right-full mr-1.5 top-1/2 -translate-y-1/2 whitespace-nowrap rounded bg-red-600 px-1.5 py-0.5 font-mono text-[9px] font-semibold leading-none text-white tabular-nums shadow-2xs">
                     {rules.hardCap}-pt cap
                   </span>
                 </div>
 
-                {/* ECR Cutoff Vertical Line continuing into Capacity Chart */}
+                {/* ECR & Indigenous Cutoff Vertical Lines continuing into Capacity Chart */}
                 {ecrFraction !== null && (
                   <div
                     aria-hidden="true"
@@ -932,6 +996,17 @@ export function TimelineAndCapacity({
                   >
                     <span className="absolute -top-4 left-1 whitespace-nowrap rounded bg-violet-50/95 px-1 py-0.5 text-[9px] font-semibold text-violet-800 border border-violet-200 leading-none">
                       ECR 5yr
+                    </span>
+                  </div>
+                )}
+                {indigenousFraction !== null && (
+                  <div
+                    aria-hidden="true"
+                    style={{ left: `${indigenousFraction * 100}%` }}
+                    className="pointer-events-none absolute inset-y-0 z-10 border-l-2 border-dashed border-amber-600/80"
+                  >
+                    <span className="absolute -top-4 left-1 whitespace-nowrap rounded bg-amber-50/95 px-1 py-0.5 text-[9px] font-semibold text-amber-900 border border-amber-300 leading-none">
+                      Indig. {rules.indigenousMaxPostPhdYears}yr
                     </span>
                   </div>
                 )}
@@ -969,13 +1044,13 @@ export function TimelineAndCapacity({
                                 : ''
                         }`}
                       >
-                        {/* Value label anchored directly above its bar */}
+                        {/* Value label anchored directly above its bar (z-20 + subtle backing so dashed cap line never cuts through numerals) */}
                         <span
-                          className={`mb-1 font-mono text-[10px] leading-none tabular-nums ${
+                          className={`relative z-20 mb-1 rounded-[2px] px-0.5 font-mono text-[10px] leading-none tabular-nums ${
                             load.isOverCap
-                              ? 'font-bold text-red-700'
+                              ? 'bg-red-50/95 font-bold text-red-700'
                               : load.totalPoints > 0
-                                ? 'font-semibold text-slate-700'
+                                ? 'bg-slate-50/95 font-semibold text-slate-700'
                                 : 'text-slate-300'
                           }`}
                         >

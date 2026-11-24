@@ -33,6 +33,7 @@ interface GrantFormModalProps {
   existingGrants: GrantEntry[];
   editingGrant: GrantEntry | null;
   defaultQuarter: QuarterKey;
+  targetProfileName?: string;
   onSave: (grant: GrantEntry) => void;
 }
 
@@ -44,6 +45,7 @@ export function GrantFormModal({
   existingGrants,
   editingGrant,
   defaultQuarter,
+  targetProfileName,
   onSave,
 }: GrantFormModalProps) {
   const [mode, setMode] = useState<'ncgp' | 'legacy'>('ncgp');
@@ -206,8 +208,20 @@ export function GrantFormModal({
     <ModalDialog
       open={open}
       onClose={onClose}
-      title={editingGrant ? `Edit ${editingGrant.label}` : 'Add Grant to Pipeline'}
-      subtitle="Default labels stay generic so you never need to enter unpublished grant titles."
+      title={
+        targetProfileName
+          ? editingGrant
+            ? `Edit ${editingGrant.label} (${targetProfileName})`
+            : `Add Existing Grant for ${targetProfileName}`
+          : editingGrant
+            ? `Edit ${editingGrant.label}`
+            : 'Add Grant to Pipeline'
+      }
+      subtitle={
+        targetProfileName
+          ? `Enter ${targetProfileName}'s active or planned ARC grant to check their 13-point headroom.`
+          : 'Default labels stay generic so you never need to enter unpublished grant titles.'
+      }
       footer={
         <>
           <button
@@ -222,7 +236,7 @@ export function GrantFormModal({
             form="grant-editor-form"
             className="rounded-md bg-slate-900 px-4 py-2 sm:py-1.5 text-xs font-semibold text-white hover:bg-slate-800 cursor-pointer"
           >
-            {editingGrant ? 'Save Changes' : 'Add to Timeline'}
+            {editingGrant ? 'Save Changes' : targetProfileName ? 'Add to Co-CI' : 'Add to Timeline'}
           </button>
         </>
       }
