@@ -1,0 +1,516 @@
+{
+  "version": "2026.11.1",
+  "verifiedDate": "2026-11-24",
+  "verifiedDisplay": "Nov 2026",
+  "projectMeta": {
+    "authorName": "Zhipeng He",
+    "authorUrl": "https://zhipenghe.me/",
+    "githubUrl": "https://github.com/ZhipengHe/arc-research-points",
+    "githubLabel": "ZhipengHe/arc-research-points"
+  },
+  "hardCap": 13,
+  "ecrYearsCutoff": 5,
+  "indigenousMaxPostPhdYears": 15,
+  "teachingReliefMaxAnnual": 50000,
+  "timelineWindow": {
+    "startYear": 2027,
+    "endYear": 2032
+  },
+  "disclaimer": "Unofficial planning workbench. Rules reflect publicly available ARC NCGP announcements verified Nov 2026. Always verify eligibility, dates, and limits against final Grant Opportunity Guidelines and RMS before submitting.",
+  "pointLifecycle": {
+    "pending": "Points lock on the submission/closing date and remain locked while the application is under assessment until outcome announcement.",
+    "active": "For funded grants, points remain locked continuously until the official project end date.",
+    "released": "Points return on the outcome announcement date if unsuccessful, or after the project end date when completed.",
+    "noEarlyRelinquishmentWarning": "No early relinquishment: active ARC projects and roles cannot be relinquished early to free up Research Points."
+  },
+  "teachingReliefRule": "Unsalaried Chief Investigators (CI / Lead CI / Node Lead CI / Director) are eligible for up to $50,000/year in teaching relief. Teaching relief cannot be combined with an SCI salary.",
+  "changelog": [
+    {
+      "version": "2026.11.1",
+      "date": "2026-11-24",
+      "summary": "Verified NCGP 13-point scheme matrix and official ARC reference links (Nov 2026).",
+      "changes": [
+        "Confirmed Explore Q1 2027 launch (Mar 2027) with Lead CI (5), CI (3), SCI (ECR) (8) point costs and partial randomisation trial.",
+        "Added full 8-scheme NCGP matrix including Initiate Fellowships, Lead & Mentor, Indigenous Excellence, Collaborate, CIEF, Breakthrough, and Prioritise.",
+        "Added 0-point legacy grant tracking (DP, LP, DECRA, FT) and $50k/yr teaching relief vs. SCI salary conflict rules."
+      ]
+    },
+    {
+      "version": "2026.07.0",
+      "date": "2026-07-22",
+      "summary": "Initial baseline aligned with the NCGP Policy Review Final Report (July 2026).",
+      "changes": [
+        "Established 13 Research Points cap per investigator across NCGP schemes.",
+        "Defined point lock lifecycle from submission through outcome and funded project end date."
+      ]
+    }
+  ],
+  "officialDocs": [
+    {
+      "id": "research-points",
+      "title": "ARC Research Points (Primary Rules)",
+      "shortTitle": "Research Points",
+      "url": "https://www.arc.gov.au/research-points",
+      "description": "Primary ARC policy page detailing the 13-point cap, role point weights, lock lifecycle, and relinquishment rules."
+    },
+    {
+      "id": "ncgp-overview",
+      "title": "New NCGP Schemes: Overview",
+      "shortTitle": "NCGP Schemes Overview",
+      "url": "https://www.arc.gov.au/funding-research/applying-grant/new-ncgp-schemes-overview",
+      "description": "Overview of the reformed National Competitive Grants Program scheme architecture, indicative schedule, and funding bands."
+    },
+    {
+      "id": "policy-review-report",
+      "title": "NCGP Policy Review Final Report (July 2026)",
+      "shortTitle": "Policy Review Final Report",
+      "url": "https://www.arc.gov.au/news-and-publications/publications/ncgp-review-final-report",
+      "pdfUrl": "https://www.arc.gov.au/system/files/2026-07/ncgp-policy-review_finalreport-20262207_0.pdf",
+      "description": "Final policy review report establishing the NCGP redesign recommendations and transition timeline."
+    },
+    {
+      "id": "gog-hub",
+      "title": "Grant Opportunity Guidelines Hub",
+      "shortTitle": "Grant Guidelines Hub",
+      "url": "https://www.arc.gov.au/manage-your-grant/grant-opportunity-guidelines",
+      "description": "Authoritative source for binding Grant Opportunity Guidelines for each open round."
+    }
+  ],
+  "schemes": [
+    {
+      "id": "explore",
+      "name": "Explore",
+      "shortName": "Explore",
+      "status": "Confirmed",
+      "indicativeLaunch": "Q1 2027 (Mar)",
+      "firstRoundQuarter": "2027-Q1",
+      "cadence": "Annual",
+      "cadenceYears": 1,
+      "outcomeLagQuarters": 2,
+      "startLagQuarters": 3,
+      "maxDurationYears": 3,
+      "fundingBandLabel": "$50k-$400k/yr",
+      "fundingMinAnnual": 50000,
+      "fundingMaxAnnual": 400000,
+      "quirkHint": "Trials partial randomisation in peer review; 60% Why / 20% How / 20% Who.",
+      "officialUrl": "https://www.arc.gov.au/funding-research/applying-grant/new-ncgp-schemes-overview",
+      "roles": [
+        {
+          "id": "lead-ci",
+          "label": "Lead CI",
+          "points": 5,
+          "compensationType": "teaching-relief",
+          "teachingReliefEligible": true,
+          "isSci": false,
+          "requiresEcr": false,
+          "requiresIndigenous": false
+        },
+        {
+          "id": "ci",
+          "label": "CI",
+          "points": 3,
+          "compensationType": "teaching-relief",
+          "teachingReliefEligible": true,
+          "isSci": false,
+          "requiresEcr": false,
+          "requiresIndigenous": false
+        },
+        {
+          "id": "sci-ecr",
+          "label": "SCI (ECR)",
+          "points": 8,
+          "compensationType": "salaried",
+          "teachingReliefEligible": false,
+          "isSci": true,
+          "requiresEcr": true,
+          "requiresIndigenous": false
+        }
+      ]
+    },
+    {
+      "id": "initiate",
+      "name": "Initiate Fellowships",
+      "shortName": "Initiate",
+      "status": "Indicative",
+      "indicativeLaunch": "Q2 2027",
+      "firstRoundQuarter": "2027-Q2",
+      "cadence": "Annual",
+      "cadenceYears": 1,
+      "outcomeLagQuarters": 2,
+      "startLagQuarters": 3,
+      "maxDurationYears": 3,
+      "fundingBandLabel": "Salary + up to $50k/yr",
+      "fundingMinAnnual": 120000,
+      "fundingMaxAnnual": 170000,
+      "fundingExtraNote": "Fellowship salary + up to $50k/yr project funding",
+      "quirkHint": "ECRs 0-5 yrs post-PhD (assessed in 0-2 yr and >2-5 yr cohorts).",
+      "officialUrl": "https://www.arc.gov.au/funding-research/applying-grant/new-ncgp-schemes-overview",
+      "roles": [
+        {
+          "id": "lead-ci",
+          "label": "Lead CI",
+          "points": 8,
+          "compensationType": "salaried",
+          "teachingReliefEligible": false,
+          "isSci": false,
+          "requiresEcr": true,
+          "requiresIndigenous": false
+        }
+      ]
+    },
+    {
+      "id": "lead-mentor",
+      "name": "Lead & Mentor",
+      "shortName": "Lead & Mentor",
+      "status": "Indicative",
+      "indicativeLaunch": "Q3 2027",
+      "firstRoundQuarter": "2027-Q3",
+      "cadence": "Annual",
+      "cadenceYears": 1,
+      "outcomeLagQuarters": 2,
+      "startLagQuarters": 3,
+      "maxDurationYears": 5,
+      "fundingBandLabel": "Up to $250k/yr + 2 postdocs + 2 HDRs",
+      "fundingMinAnnual": 150000,
+      "fundingMaxAnnual": 250000,
+      "fundingExtraNote": "+ 2 postdocs + 2 HDRs",
+      "quirkHint": "No salary for Lead CI; includes Kathleen Fitzpatrick, Georgina Sweet & 2 Indigenous awards.",
+      "officialUrl": "https://www.arc.gov.au/funding-research/applying-grant/new-ncgp-schemes-overview",
+      "roles": [
+        {
+          "id": "lead-ci-director",
+          "label": "Lead CI/Director",
+          "points": 7,
+          "compensationType": "teaching-relief",
+          "teachingReliefEligible": true,
+          "isSci": false,
+          "requiresEcr": false,
+          "requiresIndigenous": false
+        },
+        {
+          "id": "sci-ecr",
+          "label": "SCI (ECR)",
+          "points": 8,
+          "compensationType": "salaried",
+          "teachingReliefEligible": false,
+          "isSci": true,
+          "requiresEcr": true,
+          "requiresIndigenous": false
+        }
+      ]
+    },
+    {
+      "id": "indigenous-excellence",
+      "name": "Indigenous Excellence",
+      "shortName": "Indigenous Exc.",
+      "status": "Indicative",
+      "indicativeLaunch": "Q4 2027",
+      "firstRoundQuarter": "2027-Q4",
+      "cadence": "Annual",
+      "cadenceYears": 1,
+      "outcomeLagQuarters": 2,
+      "startLagQuarters": 3,
+      "maxDurationYears": 5,
+      "fundingBandLabel": "$50k-$500k/yr",
+      "fundingMinAnnual": 50000,
+      "fundingMaxAnnual": 500000,
+      "requiresIndigenous": true,
+      "quirkHint": "Aboriginal & Torres Strait Islander researchers up to 15 yrs post-PhD; only scheme with SCI (MCR).",
+      "officialUrl": "https://www.arc.gov.au/funding-research/applying-grant/new-ncgp-schemes-overview",
+      "roles": [
+        {
+          "id": "lead-ci",
+          "label": "Lead CI",
+          "points": 5,
+          "compensationType": "teaching-relief",
+          "teachingReliefEligible": true,
+          "isSci": false,
+          "requiresEcr": false,
+          "requiresIndigenous": true
+        },
+        {
+          "id": "ci",
+          "label": "CI",
+          "points": 3,
+          "compensationType": "teaching-relief",
+          "teachingReliefEligible": true,
+          "isSci": false,
+          "requiresEcr": false,
+          "requiresIndigenous": true
+        },
+        {
+          "id": "sci-ecr",
+          "label": "SCI (ECR)",
+          "points": 8,
+          "compensationType": "salaried",
+          "teachingReliefEligible": false,
+          "isSci": true,
+          "requiresEcr": true,
+          "requiresIndigenous": true
+        },
+        {
+          "id": "sci-mcr",
+          "label": "SCI (MCR)",
+          "points": 8,
+          "compensationType": "salaried",
+          "teachingReliefEligible": false,
+          "isSci": true,
+          "requiresEcr": false,
+          "requiresIndigenous": true,
+          "requiresMcrWithin15Yrs": true
+        }
+      ]
+    },
+    {
+      "id": "collaborate",
+      "name": "Collaborate",
+      "shortName": "Collaborate",
+      "status": "Indicative",
+      "indicativeLaunch": "Q1 2028",
+      "firstRoundQuarter": "2028-Q1",
+      "cadence": "Biennial",
+      "cadenceYears": 2,
+      "outcomeLagQuarters": 2,
+      "startLagQuarters": 3,
+      "maxDurationYears": 5,
+      "fundingBandLabel": "$1m-$2m/yr",
+      "fundingMinAnnual": 1000000,
+      "fundingMaxAnnual": 2000000,
+      "quirkHint": "Partner Organisation mandatory with significant cash co-contribution.",
+      "officialUrl": "https://www.arc.gov.au/funding-research/applying-grant/new-ncgp-schemes-overview",
+      "roles": [
+        {
+          "id": "lead-ci-director",
+          "label": "Lead CI/Director",
+          "points": 7,
+          "compensationType": "teaching-relief",
+          "teachingReliefEligible": true,
+          "isSci": false,
+          "requiresEcr": false,
+          "requiresIndigenous": false
+        },
+        {
+          "id": "node-lead-ci",
+          "label": "Node Lead CI",
+          "points": 5,
+          "compensationType": "teaching-relief",
+          "teachingReliefEligible": true,
+          "isSci": false,
+          "requiresEcr": false,
+          "requiresIndigenous": false
+        },
+        {
+          "id": "ci",
+          "label": "CI",
+          "points": 3,
+          "compensationType": "teaching-relief",
+          "teachingReliefEligible": true,
+          "isSci": false,
+          "requiresEcr": false,
+          "requiresIndigenous": false
+        },
+        {
+          "id": "sci-ecr",
+          "label": "SCI (ECR)",
+          "points": 8,
+          "compensationType": "salaried",
+          "teachingReliefEligible": false,
+          "isSci": true,
+          "requiresEcr": true,
+          "requiresIndigenous": false
+        }
+      ]
+    },
+    {
+      "id": "cief",
+      "name": "CIEF",
+      "shortName": "CIEF",
+      "subSchemeLabel": "Sub-scheme",
+      "status": "Indicative",
+      "indicativeLaunch": "Q2 2028",
+      "firstRoundQuarter": "2028-Q2",
+      "cadence": "Annual",
+      "cadenceYears": 1,
+      "outcomeLagQuarters": 2,
+      "startLagQuarters": 3,
+      "maxDurationYears": 5,
+      "fundingBandLabel": "Co-funded infrastructure",
+      "fundingMinAnnual": 0,
+      "fundingMaxAnnual": 0,
+      "fundingExtraNote": "Co-funded infrastructure",
+      "quirkHint": "Interim medium-sized shared research infrastructure scheme replacing LIEF.",
+      "officialUrl": "https://www.arc.gov.au/funding-research/applying-grant/new-ncgp-schemes-overview",
+      "roles": [
+        {
+          "id": "lead-ci",
+          "label": "Lead CI",
+          "points": 4,
+          "compensationType": "teaching-relief",
+          "teachingReliefEligible": true,
+          "isSci": false,
+          "requiresEcr": false,
+          "requiresIndigenous": false
+        },
+        {
+          "id": "ci",
+          "label": "CI",
+          "points": 2,
+          "compensationType": "teaching-relief",
+          "teachingReliefEligible": true,
+          "isSci": false,
+          "requiresEcr": false,
+          "requiresIndigenous": false
+        }
+      ]
+    },
+    {
+      "id": "breakthrough",
+      "name": "Breakthrough",
+      "shortName": "Breakthrough",
+      "status": "Indicative",
+      "indicativeLaunch": "Q3 2028",
+      "firstRoundQuarter": "2028-Q3",
+      "cadence": "Annual",
+      "cadenceYears": 1,
+      "outcomeLagQuarters": 2,
+      "startLagQuarters": 3,
+      "maxDurationYears": 5,
+      "fundingBandLabel": "$200k-$600k/yr",
+      "fundingMinAnnual": 200000,
+      "fundingMaxAnnual": 600000,
+      "quirkHint": "Centrepiece project scheme (~40% of NCGP budget) for all career stages.",
+      "officialUrl": "https://www.arc.gov.au/funding-research/applying-grant/new-ncgp-schemes-overview",
+      "roles": [
+        {
+          "id": "lead-ci",
+          "label": "Lead CI",
+          "points": 5,
+          "compensationType": "teaching-relief",
+          "teachingReliefEligible": true,
+          "isSci": false,
+          "requiresEcr": false,
+          "requiresIndigenous": false
+        },
+        {
+          "id": "ci",
+          "label": "CI",
+          "points": 3,
+          "compensationType": "teaching-relief",
+          "teachingReliefEligible": true,
+          "isSci": false,
+          "requiresEcr": false,
+          "requiresIndigenous": false
+        },
+        {
+          "id": "sci-ecr",
+          "label": "SCI (ECR)",
+          "points": 8,
+          "compensationType": "salaried",
+          "teachingReliefEligible": false,
+          "isSci": true,
+          "requiresEcr": true,
+          "requiresIndigenous": false
+        }
+      ]
+    },
+    {
+      "id": "prioritise",
+      "name": "Prioritise",
+      "shortName": "Prioritise",
+      "status": "Indicative",
+      "indicativeLaunch": "Q4 2028 EOI / Q2 2029 Full",
+      "firstRoundQuarter": "2028-Q4",
+      "cadence": "Biennial",
+      "cadenceYears": 2,
+      "eoiLagQuarters": 2,
+      "outcomeLagQuarters": 4,
+      "startLagQuarters": 5,
+      "maxDurationYears": 7,
+      "fundingBandLabel": "$4m-$6m/yr",
+      "fundingMinAnnual": 4000000,
+      "fundingMaxAnnual": 6000000,
+      "quirkHint": "Two-stage EOI + Full process; Partner Organisation with strong cash focus; Ministerial approval.",
+      "officialUrl": "https://www.arc.gov.au/funding-research/applying-grant/new-ncgp-schemes-overview",
+      "roles": [
+        {
+          "id": "lead-ci-director",
+          "label": "Lead CI/Director",
+          "points": 7,
+          "compensationType": "teaching-relief",
+          "teachingReliefEligible": true,
+          "isSci": false,
+          "requiresEcr": false,
+          "requiresIndigenous": false
+        },
+        {
+          "id": "node-lead-ci",
+          "label": "Node Lead CI",
+          "points": 5,
+          "compensationType": "teaching-relief",
+          "teachingReliefEligible": true,
+          "isSci": false,
+          "requiresEcr": false,
+          "requiresIndigenous": false
+        },
+        {
+          "id": "ci",
+          "label": "CI",
+          "points": 3,
+          "compensationType": "teaching-relief",
+          "teachingReliefEligible": true,
+          "isSci": false,
+          "requiresEcr": false,
+          "requiresIndigenous": false
+        },
+        {
+          "id": "sci-ecr",
+          "label": "SCI (ECR)",
+          "points": 8,
+          "compensationType": "salaried",
+          "teachingReliefEligible": false,
+          "isSci": true,
+          "requiresEcr": true,
+          "requiresIndigenous": false
+        }
+      ]
+    }
+  ],
+  "legacySchemes": [
+    {
+      "id": "legacy-dp",
+      "code": "DP",
+      "name": "Discovery Projects (Legacy)",
+      "shortName": "Legacy DP",
+      "maxDurationYears": 5,
+      "defaultDurationYears": 3,
+      "description": "Existing Discovery Project tracked at 0 Research Points for real-world workload visibility."
+    },
+    {
+      "id": "legacy-lp",
+      "code": "LP",
+      "name": "Linkage Projects (Legacy)",
+      "shortName": "Legacy LP",
+      "maxDurationYears": 5,
+      "defaultDurationYears": 3,
+      "description": "Existing Linkage Project tracked at 0 Research Points for real-world workload visibility."
+    },
+    {
+      "id": "legacy-decra",
+      "code": "DECRA",
+      "name": "DECRA (Legacy)",
+      "shortName": "Legacy DECRA",
+      "maxDurationYears": 3,
+      "defaultDurationYears": 3,
+      "description": "Existing Discovery Early Career Researcher Award tracked at 0 Research Points."
+    },
+    {
+      "id": "legacy-ft",
+      "code": "FT",
+      "name": "Future Fellowships (Legacy)",
+      "shortName": "Legacy FT",
+      "maxDurationYears": 4,
+      "defaultDurationYears": 4,
+      "description": "Existing Future Fellowship tracked at 0 Research Points."
+    }
+  ]
+}

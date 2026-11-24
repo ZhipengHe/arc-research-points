@@ -1,0 +1,40 @@
+# ARC NCGP Research Points Planner (13-Point System)
+
+> Static client-side planning workbench for Australian researchers modelling multi-year grant pipelines under the Australian Research Council (ARC) National Competitive Grants Program (NCGP) 13-point system. Unofficial tool; rules verified November 2026.
+
+## Structured Data
+
+- [rules.json](/rules.json): Complete machine-readable definitions of all NCGP schemes, point weights, indicative launch windows, durations, funding bands, eligibility rules, legacy 0-point schemes, and official ARC URLs.
+
+## Core ARC 13-Point Rules (Verified Nov 2026)
+
+- **Hard Cap:** 13 Research Points per investigator across pending and active NCGP grants.
+- **Point Lifecycle:**
+  - **Pending (Submitted):** Points lock on the submission/closing date and remain locked until outcome announcement.
+  - **Active (Funded):** Points remain locked continuously until the official project end date.
+  - **Released:** Points return on the outcome date if unsuccessful, or after the project end date when completed.
+  - **No Early Relinquishment:** Active projects and roles cannot be relinquished early to free up Research Points.
+- **Legacy Grants (0 Points):** Existing Discovery/Linkage grants (DP, LP, DECRA, FT) consume 0 Research Points and can be plotted for workload visibility.
+- **Teaching Relief:** Unsalaried Chief Investigators (CI, Lead CI, Node Lead CI, Lead CI/Director) are eligible for up to $50,000/year in teaching relief. Teaching relief cannot be combined with an SCI salary.
+- **Eligibility Windows:**
+  - **ECR Cutoff:** 5 years post-PhD conferral (adjusted for career interruptions) for Initiate Fellowships and SCI (ECR) roles.
+  - **Indigenous Excellence:** Aboriginal and Torres Strait Islander researchers up to 15 years post-PhD; the only scheme offering SCI (MCR).
+
+## Scheme & Role Matrix
+
+- **Explore** (Confirmed, Q1 2027 Mar, Annual, 3 yrs, $50k-$400k/yr): Lead CI (5), CI (3), SCI (ECR) (8).
+- **Initiate Fellowships** (Indicative, Q2 2027, Annual, 3 yrs, Salary + up to $50k/yr): Lead CI (8).
+- **Lead & Mentor** (Indicative, Q3 2027, Annual, 5 yrs, Up to $250k/yr + 2 postdocs + 2 HDRs): Lead CI/Director (7, no salary), SCI (ECR) (8).
+- **Indigenous Excellence** (Indicative, Q4 2027, Annual, 5 yrs, $50k-$500k/yr): Lead CI (5), CI (3), SCI (ECR) (8), SCI (MCR) (8).
+- **Collaborate** (Indicative, Q1 2028, Biennial, 5 yrs, $1m-$2m/yr): Lead CI/Director (7), Node Lead CI (5), CI (3), SCI (ECR) (8).
+- **CIEF** (Indicative Sub-scheme, Q2 2028, Annual, 5 yrs, Co-funded infrastructure): Lead CI (4), CI (2).
+- **Breakthrough** (Indicative, Q3 2028, Annual, 5 yrs, $200k-$600k/yr): Lead CI (5), CI (3), SCI (ECR) (8).
+- **Prioritise** (Indicative, Q4 2028 EOI / Q2 2029 Full, Biennial, 7 yrs, $4m-$6m/yr): Lead CI/Director (7), Node Lead CI (5), CI (3), SCI (ECR) (8).
+
+## Official ARC References
+
+- [ARC Research Points (Primary Rules)](https://www.arc.gov.au/research-points)
+- [New NCGP Schemes: Overview](https://www.arc.gov.au/funding-research/applying-grant/new-ncgp-schemes-overview)
+- [NCGP Policy Review Final Report (July 2026)](https://www.arc.gov.au/news-and-publications/publications/ncgp-review-final-report)
+- [NCGP Policy Review Final Report Direct PDF](https://www.arc.gov.au/system/files/2026-07/ncgp-policy-review_finalreport-20262207_0.pdf)
+- [Grant Opportunity Guidelines Hub](https://www.arc.gov.au/manage-your-grant/grant-opportunity-guidelines)

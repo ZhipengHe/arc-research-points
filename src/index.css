@@ -1,0 +1,218 @@
+@import "tailwindcss";
+
+:root {
+  color-scheme: light;
+  --surface-page: #f8f9fb;
+  --surface-card: #ffffff;
+  --border-subtle: #e2e8f0;
+  --text-primary: #0f172a;
+  --text-muted: #475569;
+  --accent-active: #0f766e;
+  --accent-awarded: #0d9488;
+  --accent-pending: #d97706;
+  --accent-over: #dc2626;
+  --accent-legacy: #94a3b8;
+  --accent-ecr: #6d28d9;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+  background-color: var(--surface-page);
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Pending striped pattern for submitted / awaiting-outcome lock periods */
+.bg-pending-stripes {
+  background-color: #fef3c7;
+  background-image: repeating-linear-gradient(
+    -45deg,
+    rgba(217, 119, 6, 0.22),
+    rgba(217, 119, 6, 0.22) 4px,
+    transparent 4px,
+    transparent 8px
+  );
+}
+
+.bg-pending-bar-stripes {
+  background-color: #f59e0b;
+  background-image: repeating-linear-gradient(
+    -45deg,
+    rgba(255, 255, 255, 0.28),
+    rgba(255, 255, 255, 0.28) 3px,
+    transparent 3px,
+    transparent 6px
+  );
+}
+
+/* Native <dialog> modal scroll containment & styling (modern-web-guidance: dialog) */
+dialog.arc-dialog {
+  padding: 0;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #0f172a;
+  box-shadow: 0 20px 50px -12px rgba(15, 23, 42, 0.22);
+  max-height: min(88vh, 820px);
+  width: min(94vw, 680px);
+  margin: auto;
+  overflow: hidden;
+}
+
+dialog.arc-dialog.arc-dialog-wide {
+  width: min(95vw, 920px);
+}
+
+dialog.arc-dialog.arc-dialog-drawer {
+  margin: 0 0 0 auto;
+  height: 100dvh;
+  max-height: 100dvh;
+  width: min(94vw, 480px);
+  border-radius: 0;
+  border-right: 0;
+  border-top: 0;
+  border-bottom: 0;
+}
+
+dialog.arc-dialog[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+dialog.arc-dialog:modal {
+  overscroll-behavior: contain;
+}
+
+dialog.arc-dialog::backdrop {
+  background: rgba(15, 23, 42, 0.4);
+  overflow: hidden;
+  overscroll-behavior: contain;
+}
+
+/* Opt-in functional motion only when reduced motion is not requested (modern-web-guidance: motion) */
+@media (prefers-reduced-motion: no-preference) {
+  dialog.arc-dialog {
+    opacity: 0;
+    transform: translateY(6px);
+    transition:
+      opacity 180ms ease-out,
+      transform 180ms ease-out,
+      overlay 180ms ease-out,
+      display 180ms ease-out;
+    transition-behavior: allow-discrete;
+  }
+
+  dialog.arc-dialog.arc-dialog-drawer {
+    transform: translateX(18px);
+  }
+
+  dialog.arc-dialog[open] {
+    opacity: 1;
+    transform: none;
+  }
+
+  @starting-style {
+    dialog.arc-dialog[open] {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    dialog.arc-dialog.arc-dialog-drawer[open] {
+      opacity: 0;
+      transform: translateX(18px);
+    }
+  }
+
+  .arc-bar-transition {
+    transition:
+      height 180ms ease-out,
+      background-color 160ms ease-out,
+      opacity 160ms ease-out;
+  }
+
+  .arc-state-transition {
+    transition:
+      background-color 150ms ease-out,
+      border-color 150ms ease-out,
+      color 150ms ease-out,
+      opacity 150ms ease-out;
+  }
+}
+
+/* Native popover="hint" toggletip styling with progressive anchor positioning */
+[interestfor] {
+  --interest-delay-start: 0.15s;
+  interest-delay-start: var(--interest-delay-start);
+  --interest-delay-end: 0.1s;
+  interest-delay-end: var(--interest-delay-end);
+}
+
+.arc-hint-popover {
+  width: max-content;
+  max-width: min(310px, calc(100vw - 24px));
+  padding: 0;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #0f172a;
+  font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  font-style: normal;
+  line-height: 1.45;
+  letter-spacing: normal;
+  text-align: left;
+  text-transform: none;
+  text-decoration: none;
+  white-space: normal;
+  overflow-wrap: break-word;
+  overflow: hidden;
+  box-shadow:
+    0 12px 28px -6px rgba(15, 23, 42, 0.16),
+    0 4px 10px -4px rgba(15, 23, 42, 0.08);
+}
+
+.arc-hint-popover:is(:popover-open, .\:popover-open) {
+  display: block;
+}
+
+@supports (position-area: block-end) {
+  .arc-hint-popover {
+    inset: auto;
+    margin: 6px 0 0 0;
+    position-area: block-end span-inline-end;
+    position-try-fallbacks: flip-block, flip-inline, flip-block flip-inline;
+  }
+}
+
+/* Clean print / Save as PDF layout */
+@media print {
+  @page {
+    size: landscape;
+    margin: 10mm;
+  }
+
+  body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .print-full-width {
+    width: 100% !important;
+    max-width: none !important;
+    grid-template-columns: 1fr !important;
+  }
+
+  .print-avoid-break {
+    break-inside: avoid;
+  }
+}

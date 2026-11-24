@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="ARC NCGP Research Points Planner Logo">
+  <rect width="64" height="64" rx="14" fill="#0f172a" />
+  <!-- Staggered pipeline timeline bars (amber pending -> teal funded) -->
+  <!-- Row 1 -->
+  <rect x="12" y="15" width="12" height="8" rx="2.5" fill="#f59e0b" />
+  <rect x="26" y="15" width="20" height="8" rx="2.5" fill="#14b8a6" />
+  <!-- Row 2 -->
+  <rect x="20" y="28" width="12" height="8" rx="2.5" fill="#f59e0b" />
+  <rect x="34" y="28" width="18" height="8" rx="2.5" fill="#0d9488" />
+  <!-- Row 3 -->
+  <rect x="12" y="41" width="18" height="8" rx="2.5" fill="#64748b" />
+  <rect x="34" y="41" width="14" height="8" rx="2.5" fill="#14b8a6" />
+  <!-- Crisp vertical capacity/cutoff threshold accent -->
+  <line x1="50" y1="11" x2="50" y2="53" stroke="#ef4444" stroke-width="2.5" stroke-dasharray="4 3" stroke-linecap="round" />
+</svg>
