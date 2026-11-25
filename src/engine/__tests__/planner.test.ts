@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import rulesJson from '../../../public/rules.json';
-import type { EligibilityProfile, GrantEntry, ResearcherProfile, RulesData } from '../../types/arc';
+import type {
+  EligibilityProfile,
+  GrantEntry,
+  PersistedWorkspaceState,
+  ResearcherProfile,
+  RulesData,
+} from '../../types/arc';
 import {
   checkCollaboratorFit,
   computeEligibilityIssues,
@@ -11,6 +17,7 @@ import {
 } from '../planner';
 import { applyCustomOverrides, createEmptyOverrides, generateGenericLabel, stripCustomLabels } from '../rules';
 import { generateScenarioIcs } from '../../utils/exportTools';
+import { exportWorkspaceJson, parseImportedWorkspaceJson } from '../../utils/storage';
 
 const rules = rulesJson as RulesData;
 
@@ -295,5 +302,132 @@ describe('ARC NCGP 13-Point Engine', () => {
     );
     expect(ics).toContain('[ARC Project End]');
     expect(ics).not.toContain('[ARC Round Open]');
+  });
+
+  it('validates public/rules.json integrity, quarter keys, positive role weights, and official URLs', () => {
+    const quarterPattern = /^\d{4}-Q[1-4]$/;
+    expect(rules.hardCap).toBeGreaterThan(0);
+    expect(rules.schemes.length).toBeGreaterThanOrEqual(8);
+    expect(rules.changelog[0]?.version).toBe(rules.version);
+
+    for (const scheme of rules.schemes) {
+      expect(scheme.firstRoundQuarter).toMatch(quarterPattern);
+      expect(scheme.officialUrl).toMatch(/^https:\/\//);
+      expect(scheme.roles.length).toBeGreaterThan(0);
+      for (const role of scheme.roles) {
+        expect(role.points).toBeGreaterThan(0);
+        expect(Number.isInteger(role.points)).toBe(true);
+      }
+    }
+
+    for (const doc of rules.officialDocs) {
+      expect(doc.url).toMatch(/^https:\/\//);
+      if (doc.pdfUrl) {
+        expect(doc.pdfUrl).toMatch(/^https:\/\//);
+      }
+    }
+  });
+
+  it('round-trips JSON workspace backup export/import and detects older rulesVersion safely', () => {
+    const sampleGrant: GrantEntry = {
+      id: 'g-backup',
+      isLegacy: false,
+      schemeId: 'explore',
+      roleId: 'lead-ci',
+      label: 'Explore #1',
+      isCustomLabel: false,
+      submissionQuarter: '2027-Q1',
+      outcomeQuarter: '2027-Q3',
+      startQuarter: '2027-Q4',
+      durationYears: 3,
+      outcome: 'funded',
+    };
+
+    const workspace: PersistedWorkspaceState = {
+      schemaVersion: 1,
+      rulesVersion: '2026.07.0',
+      activeProfileId: 'primary',
+      selectedQuarter: '2028-Q3',
+      customOverrides: createEmptyOverrides(),
+      profiles: [
+        {
+          id: 'primary',
+          name: 'You (Primary)',
+          isPrimary: true,
+          eligibility: {
+            phdConferralDate: '2023-05-01',
+            careerInterruptionMonths: 6,
+            isIndigenousResearcher: true,
+          },
+          scenarios: [
+            {
+              id: 'scen-1',
+              name: 'Plan A',
+              createdAt: '2026-11-24T00:00:00.000Z',
+              grants: [sampleGrant],
+            },
+          ],
+          activeScenarioId: 'scen-1',
+        },
+        {
+          id: 'co-1',
+          name: 'Prof. Patel',
+          isPrimary: false,
+          eligibility: defaultEligibility,
+          scenarios: [
+            {
+              id: 'scen-co-1',
+              name: 'Current Commitments',
+              createdAt: '2026-11-24T00:00:00.000Z',
+              grants: [],
+            },
+          ],
+          activeScenarioId: 'scen-co-1',
+        },
+      ],
+    };
+
+    const json = exportWorkspaceJson(workspace);
+    const { state: restored, outdatedFromVersion } = parseImportedWorkspaceJson(json, rules);
+
+    expect(outdatedFromVersion).toBe('2026.07.0');
+    expect(restored.profiles).toHaveLength(2);
+    expect(restored.profiles[0].eligibility.isIndigenousResearcher).toBe(true);
+    expect(restored.profiles[0].scenarios[0].grants).toHaveLength(1);
+    expect(restored.profiles[0].scenarios[0].grants[0].id).toBe('g-backup');
+    expect(restored.profiles[1].name).toBe('Prof. Patel');
+  });
+
+  it('enforces the 15-year post-PhD boundary for Indigenous Excellence SCI (MCR)', () => {
+    const indMcrGrant: GrantEntry = {
+      id: 'ind-mcr-1',
+      isLegacy: false,
+      schemeId: 'indigenous-excellence',
+      roleId: 'sci-mcr',
+      label: 'Indigenous Exc. #1',
+      isCustomLabel: false,
+      submissionQuarter: '2027-Q4',
+      outcomeQuarter: '2028-Q2',
+      startQuarter: '2028-Q3',
+      durationYears: 5,
+      outcome: 'funded',
+    };
+
+    const within15Yrs: EligibilityProfile = {
+      phdConferralDate: '2015-06-01', // 15yr cutoff = 2030-06-01 > 2027-Q4
+      careerInterruptionMonths: 0,
+      isIndigenousResearcher: true,
+    };
+    const over15Yrs: EligibilityProfile = {
+      phdConferralDate: '2010-06-01', // 15yr cutoff = 2025-06-01 < 2027-Q4
+      careerInterruptionMonths: 0,
+      isIndigenousResearcher: true,
+    };
+
+    const issuesWithin = computeEligibilityIssues([indMcrGrant], rules, within15Yrs);
+    expect(issuesWithin.filter((i) => i.severity === 'error')).toHaveLength(0);
+
+    const issuesOver = computeEligibilityIssues([indMcrGrant], rules, over15Yrs);
+    expect(issuesOver.some((i) => i.code === 'mcr-15yr-exceeded')).toBe(true);
   });
 });
