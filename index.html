@@ -7,7 +7,7 @@
     <meta name="author" content="Zhipeng He" />
     <meta
       name="description"
-      content="Unofficial static planning workbench for Australian researchers to model multi-year ARC NCGP grant pipelines under the 13-point Research Points system (2027-2032)."
+      content="Unofficial static workbench for Australian researchers to plan ARC NCGP grant pipelines under the 13-point system (2027-2032). Local-only & private."
     />
     <meta
       name="keywords"
@@ -24,26 +24,48 @@
     <meta property="og:title" content="ARC NCGP Research Points Planner (13-Point Workbench)" />
     <meta
       property="og:description"
-      content="Plan multi-year ARC NCGP grant pipelines (2027-2032), test Plan A vs. Plan B outcomes, check 5-year ECR cutoffs, and verify co-CI point capacity. Static, private, local-only."
+      content="Model multi-year ARC NCGP pipelines (2027-2032), stress-test Plan A vs. Plan B, check 5-yr ECR cutoffs, and verify Co-CI point headroom. 100% local-only."
+    />
+    <meta property="og:image" content="https://arc-points.zhipenghe.me/og-image.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="ARC NCGP Research Points Planner showing a 2027-2032 grant pipeline timeline and 13-point capacity bar chart"
     />
 
     <!-- Twitter / X Card -->
-    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="ARC NCGP Research Points Planner" />
     <meta
       name="twitter:description"
-      content="Unofficial 13-point planning workbench for Australian researchers under the reformed ARC NCGP schemes (2027-2032)."
+      content="Unofficial static workbench for Australian researchers to plan ARC NCGP grant pipelines under the 13-point system (2027-2032). Local-only & private."
+    />
+    <meta name="twitter:image" content="https://arc-points.zhipenghe.me/og-image.png" />
+    <meta
+      name="twitter:image:alt"
+      content="ARC NCGP Research Points Planner 2027-2032 timeline and 13-point capacity chart"
     />
 
-    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <!-- Favicons, Apple Touch Icon & Web App Manifest -->
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+
+    <!-- Machine-Readable Agent Discovery -->
     <link rel="alternate" type="text/plain" href="./llms.txt" title="LLM Context (llms.txt)" />
     <link rel="alternate" type="application/json" href="./rules.json" title="ARC NCGP Rules JSON" />
+
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
         "@type": "WebApplication",
         "name": "ARC NCGP Research Points Planner",
         "url": "https://arc-points.zhipenghe.me/",
+        "image": "https://arc-points.zhipenghe.me/og-image.png",
         "applicationCategory": "ProductivityApplication",
         "operatingSystem": "Web",
         "description": "Unofficial static planning workbench for Australian researchers modelling multi-year grant pipelines under the ARC 13-point system.",
@@ -56,7 +78,21 @@
     </script>
   </head>
   <body class="bg-[#f8f9fb] text-slate-900 antialiased selection:bg-sky-100 selection:text-slate-900">
-    <div id="root"></div>
+    <div id="root">
+      <main style="max-width:720px;margin:48px auto;padding:0 20px;font-family:system-ui,sans-serif;color:#0f172a">
+        <h1>ARC NCGP Research Points Planner (13-Point Workbench)</h1>
+        <p>
+          Unofficial static planning workbench for Australian researchers to model multi-year ARC
+          NCGP grant pipelines (2027-2032), test Plan A vs. Plan B outcomes, check 5-year ECR and
+          15-year Indigenous cutoffs, and verify Co-CI point headroom. 100% local-only in your
+          browser.
+        </p>
+        <p>
+          Machine-readable endpoints: <a href="/rules.json">rules.json</a> ·
+          <a href="/llms.txt">llms.txt</a>
+        </p>
+      </main>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
