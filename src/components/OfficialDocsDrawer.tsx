@@ -1,4 +1,4 @@
-import { BookOpen, Download, ExternalLink, FileText, Lock, ShieldAlert } from 'lucide-react';
+import { BookOpen, Compass, Download, ExternalLink, FileText, Lock, ShieldAlert } from 'lucide-react';
 import type { RulesData } from '../types/arc';
 import { GitHubIcon } from './BrandMark';
 import { ModalDialog } from './ModalDialog';
@@ -8,6 +8,7 @@ interface OfficialDocsDrawerProps {
   onClose: () => void;
   rules: RulesData;
   onDownloadBackup?: () => void;
+  onStartTour?: () => void;
 }
 
 export function OfficialDocsDrawer({
@@ -15,6 +16,7 @@ export function OfficialDocsDrawer({
   onClose,
   rules,
   onDownloadBackup,
+  onStartTour,
 }: OfficialDocsDrawerProps) {
   return (
     <ModalDialog
@@ -192,6 +194,18 @@ export function OfficialDocsDrawer({
               <code className="font-mono">rules.json</code> on GitHub as ARC publishes final Grant
               Opportunity Guidelines.
             </p>
+            {onStartTour && (
+              <div className="pt-1">
+                <button
+                  type="button"
+                  onClick={onStartTour}
+                  className="inline-flex items-center gap-1.5 rounded border border-slate-300 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-800 hover:bg-slate-100 cursor-pointer"
+                >
+                  <Compass className="h-3.5 w-3.5 text-teal-700" />
+                  Replay Quick Tour (5 steps)
+                </button>
+              </div>
+            )}
           </div>
         )}
 
