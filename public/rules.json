@@ -24,7 +24,7 @@
     "released": "Points return on the outcome announcement date if unsuccessful, or after the project end date when completed.",
     "noEarlyRelinquishmentWarning": "No early relinquishment: active ARC projects and roles cannot be relinquished early to free up Research Points."
   },
-  "teachingReliefRule": "Unsalaried Chief Investigators (CI / Lead CI / Node Lead CI / Director) are eligible for up to $50,000/year in teaching relief. Teaching relief cannot be combined with an SCI salary.",
+  "teachingReliefRule": "Unsalaried Chief Investigators (CI / Lead CI / Node Lead CI / Director) are eligible for up to $50,000/year in teaching relief. Teaching relief cannot be combined with an ARC-salaried role (SCI, Initiate Fellowship, or Legacy DECRA/FT) during overlapping quarters.",
   "changelog": [
     {
       "version": "2026.11.1",
@@ -523,7 +523,8 @@
       "shortName": "Legacy DECRA",
       "maxDurationYears": 3,
       "defaultDurationYears": 3,
-      "description": "Existing Discovery Early Career Researcher Award tracked at 0 Research Points."
+      "isSalaried": true,
+      "description": "Existing Discovery Early Career Researcher Award tracked at 0 Research Points (ARC-salaried fellowship; blocks overlapping CI teaching relief)."
     },
     {
       "id": "legacy-ft",
@@ -532,7 +533,8 @@
       "shortName": "Legacy FT",
       "maxDurationYears": 4,
       "defaultDurationYears": 4,
-      "description": "Existing Future Fellowship tracked at 0 Research Points."
+      "isSalaried": true,
+      "description": "Existing Future Fellowship tracked at 0 Research Points (ARC-salaried fellowship; blocks overlapping CI teaching relief)."
     }
   ]
 }

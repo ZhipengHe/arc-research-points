@@ -50,6 +50,7 @@ export interface LegacySchemeRule {
   maxDurationYears: number;
   defaultDurationYears: number;
   description: string;
+  isSalaried?: boolean;
 }
 
 export interface OfficialDocLink {
@@ -181,6 +182,8 @@ export interface QuarterLoadSummary {
   isOverCap: boolean;
   hasSciConflict: boolean;
   hasActiveSci: boolean;
+  activeSalariedCount: number;
+  hasConcurrentSalaryConflict: boolean;
   hasActiveTeachingRelief: boolean;
   contributions: QuarterGrantContribution[];
 }
@@ -188,7 +191,12 @@ export interface QuarterLoadSummary {
 export interface EligibilityIssue {
   grantId: string;
   severity: 'error' | 'warning';
-  code: 'ecr-expired' | 'indigenous-required' | 'mcr-15yr-exceeded' | 'sci-teaching-relief-conflict';
+  code:
+    | 'ecr-expired'
+    | 'indigenous-required'
+    | 'mcr-15yr-exceeded'
+    | 'sci-teaching-relief-conflict'
+    | 'concurrent-arc-salary';
   message: string;
 }
 

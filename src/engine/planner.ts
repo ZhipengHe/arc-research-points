@@ -18,6 +18,7 @@ import {
   formatDateShort,
   formatQuarterShort,
   generateTimelineQuarters,
+  indexToQuarter,
   quarterToEndDate,
   quarterToIndex,
   quarterToStartDate,
@@ -101,7 +102,7 @@ export function computeQuarterlyLoads(
   return targetQuarters.map((quarter) => {
     let activePoints = 0;
     let pendingPoints = 0;
-    let hasActiveSci = false;
+    let activeSalariedCount = 0;
     let hasActiveTeachingRelief = false;
     const contributions: QuarterGrantContribution[] = [];
 
@@ -110,6 +111,11 @@ export function computeQuarterlyLoads(
       if (phase === 'none') continue;
 
       if (grant.isLegacy) {
+        const legacyScheme = rules.legacySchemes.find((s) => s.id === grant.schemeId);
+        const legacySalaried = Boolean(legacyScheme?.isSalaried);
+        if (phase === 'legacy' && legacySalaried) {
+          activeSalariedCount += 1;
+        }
         contributions.push({
           grantId: grant.id,
           label: grant.label,
@@ -119,7 +125,7 @@ export function computeQuarterlyLoads(
           phase,
           isSci: false,
           teachingReliefEligible: false,
-          compensationType: 'none',
+          compensationType: legacySalaried ? 'salaried' : 'none',
         });
         continue;
       }
@@ -132,7 +138,7 @@ export function computeQuarterlyLoads(
       } else if (phase === 'awarded' || phase === 'active') {
         activePoints += pts;
         if (phase === 'active') {
-          if (role?.isSci) hasActiveSci = true;
+          if (role?.isSci || role?.compensationType === 'salaried') activeSalariedCount += 1;
           if (role?.teachingReliefEligible) hasActiveTeachingRelief = true;
         }
       }
@@ -152,6 +158,7 @@ export function computeQuarterlyLoads(
 
     const totalPoints = activePoints + pendingPoints;
     const overCapBy = Math.max(0, totalPoints - rules.hardCap);
+    const hasActiveSci = activeSalariedCount > 0;
 
     return {
       quarter,
@@ -163,6 +170,8 @@ export function computeQuarterlyLoads(
       isOverCap: totalPoints > rules.hardCap,
       hasSciConflict: hasActiveSci && hasActiveTeachingRelief,
       hasActiveSci,
+      activeSalariedCount,
+      hasConcurrentSalaryConflict: activeSalariedCount > 1,
       hasActiveTeachingRelief,
       contributions,
     };
@@ -236,7 +245,7 @@ export function computeEligibilityIssues(
     }
 
     if (
-      (scheme.requiresIndigenous || role.requiresMcrWithin15Yrs) &&
+      role.requiresMcrWithin15Yrs &&
       indigenous15Cutoff &&
       subDate.getTime() > indigenous15Cutoff.getTime()
     ) {
@@ -244,18 +253,21 @@ export function computeEligibilityIssues(
         grantId: grant.id,
         severity: 'warning',
         code: 'mcr-15yr-exceeded',
-        message: `${scheme.name} targets researchers up to ${rules.indigenousMaxPostPhdYears} yrs post-PhD; submission ${formatQuarterShort(grant.submissionQuarter)} exceeds ${formatDateShort(indigenous15Cutoff)}.`,
+        message: `${scheme.name} (${role.label}) targets researchers up to ${rules.indigenousMaxPostPhdYears} yrs post-PhD; submission ${formatQuarterShort(grant.submissionQuarter)} exceeds ${formatDateShort(indigenous15Cutoff)}.`,
       });
     }
   }
 
-  // Check SCI salary + teaching relief overlap across funded active grants
+  // Check ARC salary (SCI / Initiate / Legacy DECRA & FT) + teaching relief overlap
   const quarterlyLoads = loads ?? computeQuarterlyLoads(grants, rules);
   const conflictedGrantIds = new Set<string>();
   for (const load of quarterlyLoads) {
     if (load.hasSciConflict) {
       for (const c of load.contributions) {
-        if (c.phase === 'active' && (c.isSci || c.teachingReliefEligible)) {
+        if (
+          (c.phase === 'active' || c.phase === 'legacy') &&
+          (c.isSci || c.compensationType === 'salaried' || c.teachingReliefEligible)
+        ) {
           conflictedGrantIds.add(c.grantId);
         }
       }
@@ -271,9 +283,38 @@ export function computeEligibilityIssues(
         grantId: grant.id,
         severity: 'warning',
         code: 'sci-teaching-relief-conflict',
-        message: `${grant.label}: overlaps with an active SCI salaried role (teaching relief cannot be combined with an SCI salary during overlapping quarters).`,
+        message: `${grant.label}: overlaps with an active ARC salaried role (teaching relief cannot be combined with an SCI or ARC fellowship salary during overlapping quarters).`,
       });
     }
+  }
+
+  // Check concurrent ARC-salaried roles (e.g., Legacy DECRA/FT + Initiate Fellowship or SCI)
+  const concurrentSalaryQuarters = quarterlyLoads.filter((l) => l.hasConcurrentSalaryConflict);
+  if (concurrentSalaryQuarters.length > 0) {
+    const salariedLabels = new Set<string>();
+    let firstSalariedGrantId = '';
+    for (const load of concurrentSalaryQuarters) {
+      for (const c of load.contributions) {
+        if ((c.phase === 'active' || c.phase === 'legacy') && (c.isSci || c.compensationType === 'salaried')) {
+          salariedLabels.add(c.label);
+          if (!firstSalariedGrantId) firstSalariedGrantId = c.grantId;
+        }
+      }
+    }
+    const span =
+      concurrentSalaryQuarters.length > 1
+        ? `${formatQuarterShort(concurrentSalaryQuarters[0].quarter)} to ${formatQuarterShort(
+            concurrentSalaryQuarters[concurrentSalaryQuarters.length - 1].quarter,
+          )}`
+        : formatQuarterShort(concurrentSalaryQuarters[0].quarter);
+    issues.push({
+      grantId: firstSalariedGrantId || 'concurrent-salary',
+      severity: 'warning',
+      code: 'concurrent-arc-salary',
+      message: `Concurrent ARC salaries in ${concurrentSalaryQuarters.length} ${
+        concurrentSalaryQuarters.length === 1 ? 'quarter' : 'quarters'
+      } (${span}): ${Array.from(salariedLabels).join(' + ')}. Investigators cannot draw two simultaneous ARC salaries.`,
+    });
   }
 
   return issues;
@@ -299,6 +340,10 @@ export function computeFundingRollup(
   for (const grant of grants) {
     if (grant.isLegacy) {
       legacyCount += 1;
+      const legacyScheme = rules.legacySchemes.find((s) => s.id === grant.schemeId);
+      if (legacyScheme?.isSalaried) {
+        hasSalariedRole = true;
+      }
       continue;
     }
 
@@ -336,10 +381,11 @@ export function computeFundingRollup(
   const hasTeachingReliefBlockedBySci = loads.some((l) => l.hasSciConflict);
 
   // An investigator can claim up to $50k/yr teaching relief on unsalaried CI/Lead CI roles,
-  // unless blocked across the board by a concurrent SCI salary (we still report per-year eligibility
-  // and flag the overlap warning clearly).
+  // unless blocked across all active quarters in the window by a concurrent ARC salary.
+  const hasAnyActiveTrInWindow = loads.some((l) => l.hasActiveTeachingRelief);
   const activeOnlySciAllQuarters =
     hasTeachingReliefRole &&
+    hasAnyActiveTrInWindow &&
     loads.every((l) => !l.hasActiveTeachingRelief || l.hasActiveSci);
 
   const annualTeachingReliefMax =
@@ -422,7 +468,7 @@ export function findFittingRoles(
         eligibilityIssues.push('Requires Indigenous researcher eligibility');
       }
       if (
-        (scheme.requiresIndigenous || role.requiresMcrWithin15Yrs) &&
+        role.requiresMcrWithin15Yrs &&
         indigenous15Cutoff &&
         subDate.getTime() > indigenous15Cutoff.getTime()
       ) {
@@ -443,7 +489,13 @@ export function findFittingRoles(
         durationYears: scheme.maxDurationYears,
         outcome: 'funded',
       };
-      const simLoads = computeQuarterlyLoads([...grants, simulatedGrant], rules, timelineQuarters);
+      const candSubIdx = quarterToIndex(simulatedGrant.submissionQuarter);
+      const candEndIdx = quarterToIndex(getGrantEndQuarter(simulatedGrant));
+      const simQuarters: QuarterKey[] = [];
+      for (let i = candSubIdx; i <= candEndIdx; i++) {
+        simQuarters.push(indexToQuarter(i));
+      }
+      const simLoads = computeQuarterlyLoads([...grants, simulatedGrant], rules, simQuarters);
       let peakLoadIfAdded = 0;
       let peakExceedQuarter: QuarterKey | null = null;
       for (const l of simLoads) {

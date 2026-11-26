@@ -1,8 +1,56 @@
-import type { PersistedWorkspaceState, RulesData } from '../types/arc';
+import type { GrantEntry, PersistedWorkspaceState, QuarterKey, RulesData } from '../types/arc';
 import { createEmptyOverrides } from '../engine/rules';
 import { createInitialWorkspaceState } from '../engine/templates';
 
 export const STORAGE_KEY = 'arc_ncgp_points_planner_v1';
+
+const QUARTER_KEY_RE = /^\d{4}-Q[1-4]$/;
+
+function isValidQuarterKey(value: unknown): value is QuarterKey {
+  return typeof value === 'string' && QUARTER_KEY_RE.test(value);
+}
+
+export function sanitizeGrantEntry(raw: unknown): GrantEntry | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const g = raw as Record<string, unknown>;
+  if (
+    typeof g.id !== 'string' ||
+    !g.id.trim() ||
+    typeof g.schemeId !== 'string' ||
+    !g.schemeId.trim() ||
+    typeof g.roleId !== 'string' ||
+    !g.roleId.trim() ||
+    typeof g.label !== 'string' ||
+    !g.label.trim() ||
+    typeof g.isLegacy !== 'boolean' ||
+    !isValidQuarterKey(g.submissionQuarter) ||
+    !isValidQuarterKey(g.outcomeQuarter) ||
+    !isValidQuarterKey(g.startQuarter) ||
+    typeof g.durationYears !== 'number' ||
+    !Number.isFinite(g.durationYears) ||
+    g.durationYears < 1 ||
+    g.durationYears > 10 ||
+    (g.outcome !== 'funded' && g.outcome !== 'unsuccessful')
+  ) {
+    return null;
+  }
+
+  return {
+    id: g.id,
+    isLegacy: g.isLegacy,
+    isAwarded: typeof g.isAwarded === 'boolean' ? g.isAwarded : undefined,
+    schemeId: g.schemeId,
+    roleId: g.roleId,
+    label: g.label,
+    isCustomLabel: Boolean(g.isCustomLabel),
+    submissionQuarter: g.submissionQuarter,
+    outcomeQuarter: g.outcomeQuarter,
+    startQuarter: g.startQuarter,
+    durationYears: g.durationYears,
+    outcome: g.outcome,
+    notes: typeof g.notes === 'string' ? g.notes : undefined,
+  };
+}
 
 export interface LoadedWorkspaceResult {
   state: PersistedWorkspaceState;
@@ -63,13 +111,9 @@ export function sanitizeWorkspaceState(
               name: typeof s.name === 'string' ? s.name : 'Untitled Scenario',
               createdAt: typeof s.createdAt === 'string' ? s.createdAt : new Date().toISOString(),
               grants: Array.isArray(s.grants)
-                ? s.grants.filter(
-                    (g) =>
-                      g &&
-                      typeof g.id === 'string' &&
-                      typeof g.schemeId === 'string' &&
-                      typeof g.submissionQuarter === 'string',
-                  )
+                ? s.grants
+                    .map((g) => sanitizeGrantEntry(g))
+                    .filter((g): g is GrantEntry => g !== null)
                 : [],
             }))
           : [

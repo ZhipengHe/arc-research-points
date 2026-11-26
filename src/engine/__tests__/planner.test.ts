@@ -15,9 +15,11 @@ import {
   findFittingRoles,
   getGrantPhaseAtQuarter,
 } from '../planner';
-import { applyCustomOverrides, createEmptyOverrides, generateGenericLabel, stripCustomLabels } from '../rules';
+import { applyCustomOverrides, createEmptyOverrides, generateGenericLabel, getNearestRoundQuarter, stripCustomLabels } from '../rules';
+import { addMonthsUtc } from '../quarters';
 import { generateScenarioIcs } from '../../utils/exportTools';
-import { exportWorkspaceJson, parseImportedWorkspaceJson } from '../../utils/storage';
+import { decodeShareHash } from '../../utils/shareLink';
+import { exportWorkspaceJson, parseImportedWorkspaceJson, sanitizeGrantEntry } from '../../utils/storage';
 
 const rules = rulesJson as RulesData;
 
@@ -429,5 +431,251 @@ describe('ARC NCGP 13-Point Engine', () => {
 
     const issuesOver = computeEligibilityIssues([indMcrGrant], rules, over15Yrs);
     expect(issuesOver.some((i) => i.code === 'mcr-15yr-exceeded')).toBe(true);
+  });
+
+  it('flags teaching-relief overlap for Initiate Fellowships and Legacy DECRA/FT, and preserves post-2032 eligibility', () => {
+    const initiateGrant: GrantEntry = {
+      id: 'init-1',
+      isLegacy: false,
+      schemeId: 'initiate',
+      roleId: 'lead-ci',
+      label: 'Initiate #1',
+      isCustomLabel: false,
+      submissionQuarter: '2027-Q2',
+      outcomeQuarter: '2027-Q4',
+      startQuarter: '2028-Q1',
+      durationYears: 3, // 2028-Q1 .. 2030-Q4
+      outcome: 'funded',
+    };
+    const exploreCi: GrantEntry = {
+      id: 'exp-ci-1',
+      isLegacy: false,
+      schemeId: 'explore',
+      roleId: 'ci',
+      label: 'Explore #1',
+      isCustomLabel: false,
+      submissionQuarter: '2027-Q1',
+      outcomeQuarter: '2027-Q3',
+      startQuarter: '2027-Q4',
+      durationYears: 3, // 2027-Q4 .. 2030-Q3
+      outcome: 'funded',
+    };
+
+    const initLoads = computeQuarterlyLoads([initiateGrant, exploreCi], rules);
+    expect(initLoads.find((l) => l.quarter === '2027-Q4')?.hasSciConflict).toBe(false);
+    expect(initLoads.find((l) => l.quarter === '2028-Q1')?.hasSciConflict).toBe(true);
+    const initIssues = computeEligibilityIssues([initiateGrant, exploreCi], rules, defaultEligibility, initLoads);
+    expect(initIssues.some((i) => i.code === 'sci-teaching-relief-conflict')).toBe(true);
+    const initRollup = computeFundingRollup([initiateGrant, exploreCi], rules, initLoads);
+    expect(initRollup.hasTeachingReliefBlockedBySci).toBe(true);
+    expect(initRollup.annualTeachingReliefMax).toBe(50000); // 2027-Q4 is non-overlapping
+
+    // Legacy DECRA (0 pts, ARC salaried) overlapping Explore CI
+    const legacyDecra: GrantEntry = {
+      id: 'leg-decra-1',
+      isLegacy: true,
+      schemeId: 'legacy-decra',
+      roleId: 'legacy-ci',
+      label: 'Legacy DECRA #1',
+      isCustomLabel: false,
+      submissionQuarter: '2026-Q1',
+      outcomeQuarter: '2026-Q4',
+      startQuarter: '2027-Q1',
+      durationYears: 3, // 2027-Q1 .. 2029-Q4
+      outcome: 'funded',
+    };
+    const legacyLoads = computeQuarterlyLoads([legacyDecra, exploreCi], rules);
+    expect(legacyLoads.find((l) => l.quarter === '2028-Q1')?.totalPoints).toBe(3);
+    expect(legacyLoads.find((l) => l.quarter === '2028-Q1')?.hasSciConflict).toBe(true);
+    const legacyIssues = computeEligibilityIssues([legacyDecra, exploreCi], rules, defaultEligibility, legacyLoads);
+    expect(legacyIssues.some((i) => i.code === 'sci-teaching-relief-conflict')).toBe(true);
+
+    // Late-2032 submission whose active quarters start in 2033 should not vacuously zero teaching relief
+    const lateExplore: GrantEntry = {
+      id: 'exp-late-1',
+      isLegacy: false,
+      schemeId: 'explore',
+      roleId: 'lead-ci',
+      label: 'Explore #2',
+      isCustomLabel: false,
+      submissionQuarter: '2032-Q2',
+      outcomeQuarter: '2032-Q4',
+      startQuarter: '2033-Q1',
+      durationYears: 3,
+      outcome: 'funded',
+    };
+    const lateRollup = computeFundingRollup([lateExplore], rules);
+    expect(lateRollup.annualTeachingReliefMax).toBe(50000);
+  });
+
+  it('handles senior Indigenous Lead CI, concurrent ARC salaries, post-2032 What Fits breaches, and month-end cutoffs', () => {
+    // 1. Senior Indigenous researcher (>15 yrs post-PhD) is eligible for Indigenous Excellence Lead CI
+    const seniorInd: EligibilityProfile = {
+      phdConferralDate: '2008-06-01', // 15yr cutoff = 2023-06-01
+      careerInterruptionMonths: 0,
+      isIndigenousResearcher: true,
+    };
+    const indLeadGrant: GrantEntry = {
+      id: 'ind-lead-1',
+      isLegacy: false,
+      schemeId: 'indigenous-excellence',
+      roleId: 'lead-ci',
+      label: 'Indigenous Exc. #1',
+      isCustomLabel: false,
+      submissionQuarter: '2027-Q4',
+      outcomeQuarter: '2028-Q2',
+      startQuarter: '2028-Q3',
+      durationYears: 5,
+      outcome: 'funded',
+    };
+    expect(computeEligibilityIssues([indLeadGrant], rules, seniorInd)).toHaveLength(0);
+    const fitInd = findFittingRoles([], rules, seniorInd, '2027-Q4');
+    const indLeadOpt = fitInd.options.find(
+      (o) => o.scheme.id === 'indigenous-excellence' && o.role.id === 'lead-ci',
+    );
+    const indMcrOpt = fitInd.options.find(
+      (o) => o.scheme.id === 'indigenous-excellence' && o.role.id === 'sci-mcr',
+    );
+    expect(indLeadOpt?.isEligible).toBe(true);
+    expect(indMcrOpt?.isEligible).toBe(false);
+
+    // 2. Legacy DECRA (0 pts, salaried) + Initiate Fellowship (8 pts, salaried) triggers concurrent-arc-salary
+    const legacyDecra: GrantEntry = {
+      id: 'leg-decra-2',
+      isLegacy: true,
+      schemeId: 'legacy-decra',
+      roleId: 'legacy-ci',
+      label: 'Legacy DECRA #1',
+      isCustomLabel: false,
+      submissionQuarter: '2026-Q1',
+      outcomeQuarter: '2026-Q4',
+      startQuarter: '2027-Q1',
+      durationYears: 3, // 2027-Q1 .. 2029-Q4
+      outcome: 'funded',
+    };
+    const initGrant: GrantEntry = {
+      id: 'init-2',
+      isLegacy: false,
+      schemeId: 'initiate',
+      roleId: 'lead-ci',
+      label: 'Initiate #1',
+      isCustomLabel: false,
+      submissionQuarter: '2027-Q2',
+      outcomeQuarter: '2027-Q4',
+      startQuarter: '2028-Q1',
+      durationYears: 3, // 2028-Q1 .. 2030-Q4
+      outcome: 'funded',
+    };
+    const concLoads = computeQuarterlyLoads([legacyDecra, initGrant], rules);
+    expect(concLoads.find((l) => l.quarter === '2028-Q1')?.totalPoints).toBe(8);
+    expect(concLoads.find((l) => l.quarter === '2028-Q1')?.hasConcurrentSalaryConflict).toBe(true);
+    const concIssues = computeEligibilityIssues([legacyDecra, initGrant], rules, defaultEligibility, concLoads);
+    expect(concIssues.some((i) => i.code === 'concurrent-arc-salary')).toBe(true);
+
+    // 3. findFittingRoles detects a post-2032 cap breach
+    const lateBreakthrough: GrantEntry = {
+      id: 'bt-late',
+      isLegacy: false,
+      schemeId: 'breakthrough',
+      roleId: 'lead-ci', // 5 pts
+      label: 'Breakthrough #1',
+      isCustomLabel: false,
+      submissionQuarter: '2032-Q3',
+      outcomeQuarter: '2033-Q1',
+      startQuarter: '2033-Q2',
+      durationYears: 5, // 2033-Q2 .. 2038-Q1
+      outcome: 'funded',
+    };
+    const latePrioritise: GrantEntry = {
+      id: 'pr-late',
+      isLegacy: false,
+      schemeId: 'prioritise',
+      roleId: 'lead-ci-director', // 7 pts
+      label: 'Prioritise #1',
+      isCustomLabel: false,
+      submissionQuarter: '2032-Q4',
+      outcomeQuarter: '2033-Q4',
+      startQuarter: '2034-Q1',
+      durationYears: 5,
+      outcome: 'funded',
+    };
+    // At 2032-Q1 load is 0 pts, but adding Explore Lead CI (5 pts, active 2032-Q4..2035-Q3) hits 5+5+7=17 in 2033-Q1+
+    const lateFit = findFittingRoles([lateBreakthrough, latePrioritise], rules, defaultEligibility, '2032-Q1');
+    const expLeadOpt = lateFit.options.find((o) => o.scheme.id === 'explore' && o.role.id === 'lead-ci');
+    expect(expLeadOpt?.exceedsCapLater).toBe(true);
+    expect(expLeadOpt?.peakLoadIfAdded).toBe(17);
+
+    // 4. addMonthsUtc clamps month-end dates without overflowing into March
+    const clamped = addMonthsUtc(new Date(Date.UTC(2025, 0, 31)), 61);
+    expect(clamped.toISOString().slice(0, 10)).toBe('2030-02-28');
+  });
+
+  it('never offers elapsed rounds, ignores earlier unrelated cap breaches in What Fits, and validates grant fields strictly', async () => {
+    // 1. Next round on 2032-Q4 for annual Q1 Explore advances to 2033-Q1 (never elapsed 2032-Q1)
+    const exploreScheme = rules.schemes.find((s) => s.id === 'explore')!;
+    expect(getNearestRoundQuarter(exploreScheme, '2032-Q4')).toBe('2033-Q1');
+
+    // 2. Earlier 2027 cap breach does not mark a clean 2031-Q1 bid as exceedsCapLater
+    const earlyBreachA: GrantEntry = {
+      id: 'early-a',
+      isLegacy: false,
+      schemeId: 'lead-mentor',
+      roleId: 'lead-ci-director', // 7 pts
+      label: 'Lead & Mentor #1',
+      isCustomLabel: false,
+      submissionQuarter: '2027-Q1',
+      outcomeQuarter: '2027-Q3',
+      startQuarter: '2027-Q4',
+      durationYears: 1, // ends 2028-Q3
+      outcome: 'funded',
+    };
+    const earlyBreachB: GrantEntry = {
+      id: 'early-b',
+      isLegacy: false,
+      schemeId: 'collaborate',
+      roleId: 'lead-ci-director', // 7 pts
+      label: 'Collaborate #1',
+      isCustomLabel: false,
+      submissionQuarter: '2027-Q1',
+      outcomeQuarter: '2027-Q3',
+      startQuarter: '2027-Q4',
+      durationYears: 1, // ends 2028-Q3
+      outcome: 'funded',
+    };
+    const futureFit = findFittingRoles([earlyBreachA, earlyBreachB], rules, defaultEligibility, '2031-Q1');
+    const exp2031 = futureFit.options.find((o) => o.scheme.id === 'explore' && o.role.id === 'lead-ci');
+    expect(exp2031?.exceedsCapLater).toBe(false);
+    expect(exp2031?.peakExceedQuarter).toBeNull();
+
+    // 3. Malformed grant (label: 42) is rejected by sanitizeGrantEntry and decodeShareHash
+    const badGrant = {
+      id: 'bad-1',
+      isLegacy: false,
+      schemeId: 'explore',
+      roleId: 'lead-ci',
+      label: 42,
+      isCustomLabel: false,
+      submissionQuarter: '2027-Q1',
+      outcomeQuarter: '2027-Q3',
+      startQuarter: '2027-Q4',
+      durationYears: 3,
+      outcome: 'funded',
+    };
+    expect(sanitizeGrantEntry(badGrant)).toBeNull();
+    expect(sanitizeGrantEntry({ ...badGrant, label: 'Explore #1', durationYears: 1.5 })?.durationYears).toBe(1.5);
+
+    const encodedBad = btoa(
+      JSON.stringify({
+        v: 1,
+        rulesVersion: rules.version,
+        scenarioName: 'Bad',
+        grants: [badGrant],
+        strippedTitles: false,
+      }),
+    )
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '');
+    expect(await decodeShareHash(`#plan=${encodedBad}`)).toBeNull();
   });
 });
