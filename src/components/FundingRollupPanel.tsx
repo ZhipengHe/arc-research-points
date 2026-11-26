@@ -68,8 +68,11 @@ export function FundingRollupPanel({
   let teachingReliefSummary: string;
   let teachingReliefTone = 'text-slate-800';
   if (rollup.fundedCount === 0) {
-    teachingReliefSummary = 'None';
-    teachingReliefTone = 'text-slate-500';
+    teachingReliefSummary = rollup.hasSalariedRole ? 'Salaried fellowship (no CI teaching relief)' : 'None';
+    teachingReliefTone = rollup.hasSalariedRole ? 'text-indigo-800' : 'text-slate-500';
+  } else if (activeTrQuarters.length === 0 && rollup.annualTeachingReliefMax > 0) {
+    teachingReliefSummary = `Eligible after ${rules.timelineWindow.endYear} (up to ${formatCurrencyAud(rules.teachingReliefMaxAnnual)}/yr)`;
+    teachingReliefTone = 'text-teal-800';
   } else if (activeTrQuarters.length === 0 && rollup.hasSalariedRole) {
     teachingReliefSummary = 'Salaried role (no CI teaching relief)';
     teachingReliefTone = 'text-indigo-800';
@@ -80,10 +83,10 @@ export function FundingRollupPanel({
     teachingReliefSummary = `Eligible (up to ${formatCurrencyAud(rules.teachingReliefMaxAnnual)}/yr)`;
     teachingReliefTone = 'text-teal-800';
   } else if (freeTrCount === 0) {
-    teachingReliefSummary = `Blocked in all ${blockedTrQuarters.length} active qtrs by SCI salary`;
+    teachingReliefSummary = `Blocked in all ${blockedTrQuarters.length} active qtrs by ARC salary`;
     teachingReliefTone = 'text-amber-800';
   } else {
-    teachingReliefSummary = `Blocked in ${blockedTrQuarters.length} of ${activeTrQuarters.length} active qtrs by SCI (up to ${formatCurrencyAud(rules.teachingReliefMaxAnnual)}/yr otherwise)`;
+    teachingReliefSummary = `Blocked in ${blockedTrQuarters.length} of ${activeTrQuarters.length} active qtrs by ARC salary (up to ${formatCurrencyAud(rules.teachingReliefMaxAnnual)}/yr otherwise)`;
     teachingReliefTone = 'text-amber-800';
   }
 
@@ -164,11 +167,11 @@ export function FundingRollupPanel({
               <li className="flex items-start gap-2 tabular-nums">
                 <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5 text-amber-700" />
                 <span>
-                  <strong>SCI salary overlaps CI teaching relief</strong> in{' '}
+                  <strong>ARC salary overlaps CI teaching relief</strong> in{' '}
                   {blockedTrQuarters.length}{' '}
                   {blockedTrQuarters.length === 1 ? 'quarter' : 'quarters'} ({sciOverlapSpan})
                   affecting {sciAffectedLabels.join(', ')}. Teaching relief cannot be claimed during
-                  quarters with an active SCI salary.
+                  quarters with an active SCI or ARC fellowship salary.
                 </span>
               </li>
             )}

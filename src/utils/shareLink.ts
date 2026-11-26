@@ -1,6 +1,7 @@
 import type { EligibilityProfile, GrantEntry, RulesData, Scenario } from '../types/arc';
 import { stripCustomLabels } from '../engine/rules';
 import { createId } from '../engine/templates';
+import { sanitizeGrantEntry } from './storage';
 
 export interface SharedPlanPayload {
   v: 1;
@@ -107,14 +108,21 @@ export async function decodeShareHash(hash: string): Promise<SharedPlanPayload |
     const parsed = JSON.parse(json) as Partial<SharedPlanPayload>;
     if (!parsed || !Array.isArray(parsed.grants)) return null;
 
+    const sanitizedGrants: GrantEntry[] = [];
+    for (const rawGrant of parsed.grants) {
+      const valid = sanitizeGrantEntry(rawGrant);
+      if (!valid) return null;
+      sanitizedGrants.push({
+        ...valid,
+        id: createId('grant'),
+      });
+    }
+
     return {
       v: 1,
       rulesVersion: typeof parsed.rulesVersion === 'string' ? parsed.rulesVersion : 'unknown',
       scenarioName: typeof parsed.scenarioName === 'string' ? parsed.scenarioName : 'Shared Plan',
-      grants: parsed.grants.map((g) => ({
-        ...g,
-        id: createId('grant'),
-      })),
+      grants: sanitizedGrants,
       eligibility: parsed.eligibility,
       strippedTitles: Boolean(parsed.strippedTitles),
     };

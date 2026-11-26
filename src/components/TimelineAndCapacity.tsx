@@ -270,7 +270,7 @@ export function TimelineAndCapacity({
               )}
               {activeLoad.hasSciConflict && (
                 <span className="inline-flex items-center gap-1 rounded bg-amber-100 px-1.5 py-0.5 text-[11px] font-medium text-amber-900">
-                  SCI salary overlaps teaching relief
+                  ARC salary overlaps teaching relief
                 </span>
               )}
             </div>

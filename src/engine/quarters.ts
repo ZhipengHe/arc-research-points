@@ -88,9 +88,11 @@ export function parseFlexibleDate(value: string): Date | null {
 }
 
 export function addMonthsUtc(date: Date, months: number): Date {
-  const d = new Date(date.getTime());
-  d.setUTCMonth(d.getUTCMonth() + months);
-  return d;
+  const totalMonths = date.getUTCFullYear() * 12 + date.getUTCMonth() + months;
+  const year = Math.floor(totalMonths / 12);
+  const month = ((totalMonths % 12) + 12) % 12;
+  const maxDay = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+  return new Date(Date.UTC(year, month, Math.min(date.getUTCDate(), maxDay)));
 }
 
 export function dateToQuarter(date: Date): QuarterKey {

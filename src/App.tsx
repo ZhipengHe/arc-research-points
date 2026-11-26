@@ -83,6 +83,8 @@ export default function App() {
     label: string;
     workspace: PersistedWorkspaceState;
   } | null>(null);
+  const undoPostActionSigRef = useRef<string | null>(null);
+  const undoCapturingRef = useRef(false);
   const [eligibilityOpen, setEligibilityOpen] = useState(false);
   const [templatesOpen, setTemplatesOpen] = useState(false);
   const [compareOpen, setCompareOpen] = useState(false);
@@ -149,10 +151,21 @@ export default function App() {
     return () => window.removeEventListener('hashchange', onHashChange);
   }, []);
 
-  // Persist workspace to localStorage whenever it updates
+  // Persist workspace to localStorage whenever it updates, and invalidate Undo on later edits
   useEffect(() => {
     if (!workspace) return;
     saveWorkspaceState(workspace);
+    const sig = JSON.stringify({
+      profiles: workspace.profiles,
+      customOverrides: workspace.customOverrides,
+    });
+    if (undoCapturingRef.current) {
+      undoCapturingRef.current = false;
+      undoPostActionSigRef.current = sig;
+    } else if (undoPostActionSigRef.current !== null && undoPostActionSigRef.current !== sig) {
+      undoPostActionSigRef.current = null;
+      setUndoSnapshot(null);
+    }
   }, [workspace]);
 
   const effectiveRules = useMemo(() => {
@@ -330,6 +343,8 @@ export default function App() {
   const captureUndo = useCallback(
     (label: string) => {
       if (!workspace) return;
+      undoCapturingRef.current = true;
+      undoPostActionSigRef.current = null;
       setUndoSnapshot({
         label,
         workspace: JSON.parse(JSON.stringify(workspace)) as PersistedWorkspaceState,
@@ -340,6 +355,8 @@ export default function App() {
 
   const handleUndo = () => {
     if (!undoSnapshot) return;
+    undoCapturingRef.current = false;
+    undoPostActionSigRef.current = null;
     setWorkspace(undoSnapshot.workspace);
     setUndoSnapshot(null);
   };
@@ -405,10 +422,11 @@ export default function App() {
     }
     const built = buildScenarioFromTemplate(template);
     updateActiveProfile((profile) => {
-      const nextEligibility =
-        profile.eligibility.phdConferralDate === ''
-          ? template.eligibility
-          : profile.eligibility;
+      const eligibilityUntouched =
+        profile.eligibility.phdConferralDate === '' &&
+        profile.eligibility.careerInterruptionMonths === 0 &&
+        !profile.eligibility.isIndigenousResearcher;
+      const nextEligibility = eligibilityUntouched ? template.eligibility : profile.eligibility;
       if (mode === 'replace') {
         return {
           ...profile,

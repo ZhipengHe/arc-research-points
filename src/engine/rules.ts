@@ -99,19 +99,22 @@ export function getSchemeRoundQuarters(
 }
 
 /**
- * Picks the nearest valid round quarter on or after targetQuarter (falling back to latest valid round).
+ * Picks the first valid round quarter on or after targetQuarter (advancing past endYear if needed).
  */
 export function getNearestRoundQuarter(
   scheme: SchemeRule,
   targetQuarter: QuarterKey,
-  startYear = 2027,
-  endYear = 2032,
+  _startYear = 2027,
+  _endYear = 2032,
 ): QuarterKey {
-  const rounds = getSchemeRoundQuarters(scheme, startYear, endYear);
-  if (rounds.length === 0) return scheme.firstRoundQuarter;
+  const first = parseQuarter(scheme.firstRoundQuarter);
+  const stepYears = Math.max(1, scheme.cadenceYears || 1);
   const targetIdx = quarterToIndex(targetQuarter);
-  const upcoming = rounds.find((r) => quarterToIndex(r) >= targetIdx);
-  return upcoming ?? rounds[rounds.length - 1];
+  let year = first.year;
+  while (quarterToIndex(`${year}-Q${first.q}` as QuarterKey) < targetIdx) {
+    year += stepYears;
+  }
+  return `${year}-Q${first.q}` as QuarterKey;
 }
 
 export function computeDefaultDatesForScheme(
