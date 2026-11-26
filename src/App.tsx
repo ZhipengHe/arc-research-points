@@ -797,6 +797,7 @@ export default function App() {
             </button>
             <button
               type="button"
+              data-tour="toolbar"
               onClick={() => setMobileMenuOpen((v) => !v)}
               aria-expanded={mobileMenuOpen}
               aria-label="Toggle planner tools menu"

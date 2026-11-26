@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowLeft, ArrowRight, Compass, X } from 'lucide-react';
 
 interface TourStep {
@@ -71,6 +71,9 @@ function findVisibleTourElement(target: string): HTMLElement | null {
 export function QuickTourOverlay({ open, onClose, onSelectRightTab }: QuickTourOverlayProps) {
   const [stepIdx, setStepIdx] = useState(0);
   const [rect, setRect] = useState<RectBox | null>(null);
+  const cardRef = useRef<HTMLDivElement | null>(null);
+  const primaryBtnRef = useRef<HTMLButtonElement | null>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
 
   const step = TOUR_STEPS[stepIdx] ?? TOUR_STEPS[0];
 
@@ -132,9 +135,67 @@ export function QuickTourOverlay({ open, onClose, onSelectRightTab }: QuickTourO
     };
   }, [open, step.id, step.target, step.rightTab, onSelectRightTab, measure]);
 
+  // Move focus into the tour on open and restore focus to the launcher on close
+  useEffect(() => {
+    if (!open) return;
+    previousFocusRef.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const raf = window.requestAnimationFrame(() => {
+      primaryBtnRef.current?.focus({ preventScroll: true });
+    });
+    return () => {
+      window.cancelAnimationFrame(raf);
+      const prev = previousFocusRef.current;
+      previousFocusRef.current = null;
+      if (prev && prev.isConnected) {
+        prev.focus({ preventScroll: true });
+      }
+    };
+  }, [open]);
+
+  // Keep focus inside the card if Back/Skip swaps on step change
+  useEffect(() => {
+    if (!open) return;
+    const card = cardRef.current;
+    if (!card) return;
+    if (document.activeElement && !card.contains(document.activeElement)) {
+      primaryBtnRef.current?.focus({ preventScroll: true });
+    }
+  }, [open, stepIdx]);
+
   useEffect(() => {
     if (!open) return;
     const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Tab') {
+        const card = cardRef.current;
+        if (!card) {
+          e.preventDefault();
+          return;
+        }
+        const focusables = Array.from(
+          card.querySelectorAll<HTMLElement>(
+            'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+          ),
+        );
+        if (focusables.length === 0) {
+          e.preventDefault();
+          return;
+        }
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+        const active = document.activeElement as HTMLElement | null;
+        if (!active || !card.contains(active)) {
+          e.preventDefault();
+          (e.shiftKey ? last : first).focus();
+        } else if (e.shiftKey && active === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && active === last) {
+          e.preventDefault();
+          first.focus();
+        }
+        return;
+      }
       if (e.key === 'Escape') {
         e.preventDefault();
         onClose();
@@ -240,6 +301,7 @@ export function QuickTourOverlay({ open, onClose, onSelectRightTab }: QuickTourO
 
       {/* Floating Tour Card */}
       <div
+        ref={cardRef}
         style={cardStyle}
         className="fixed z-10 rounded-xl border border-slate-200 bg-white p-4 text-xs text-slate-700 shadow-2xl"
       >
@@ -297,6 +359,7 @@ export function QuickTourOverlay({ open, onClose, onSelectRightTab }: QuickTourO
             )}
 
             <button
+              ref={primaryBtnRef}
               type="button"
               onClick={() => {
                 if (isLast) {
