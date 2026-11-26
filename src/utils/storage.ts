@@ -46,7 +46,7 @@ export function sanitizeGrantEntry(raw: unknown): GrantEntry | null {
     submissionQuarter: g.submissionQuarter,
     outcomeQuarter: g.outcomeQuarter,
     startQuarter: g.startQuarter,
-    durationYears: Math.round(g.durationYears),
+    durationYears: g.durationYears,
     outcome: g.outcome,
     notes: typeof g.notes === 'string' ? g.notes : undefined,
   };

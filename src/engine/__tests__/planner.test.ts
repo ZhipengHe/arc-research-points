@@ -662,6 +662,7 @@ describe('ARC NCGP 13-Point Engine', () => {
       outcome: 'funded',
     };
     expect(sanitizeGrantEntry(badGrant)).toBeNull();
+    expect(sanitizeGrantEntry({ ...badGrant, label: 'Explore #1', durationYears: 1.5 })?.durationYears).toBe(1.5);
 
     const encodedBad = btoa(
       JSON.stringify({
