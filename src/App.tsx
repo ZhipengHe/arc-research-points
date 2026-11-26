@@ -63,6 +63,7 @@ import { EligibilityModal, TemplatesModal } from './components/EligibilityAndTem
 import { CustomRulesModal } from './components/CustomRulesModal';
 import { ExportShareModal } from './components/ExportShareModal';
 import { OfficialDocsDrawer } from './components/OfficialDocsDrawer';
+import { QuickTourOverlay } from './components/QuickTourOverlay';
 import { BrandMark, GitHubIcon } from './components/BrandMark';
 
 export default function App() {
@@ -88,6 +89,7 @@ export default function App() {
   const [customRulesOpen, setCustomRulesOpen] = useState(false);
   const [exportModalOpen, setExportModalOpen] = useState(false);
   const [docsDrawerOpen, setDocsDrawerOpen] = useState(false);
+  const [tourOpen, setTourOpen] = useState(false);
 
   // Inline scenario rename & mobile UI state
   const [renamingScenarioId, setRenamingScenarioId] = useState<string | null>(null);
@@ -795,6 +797,7 @@ export default function App() {
             </button>
             <button
               type="button"
+              data-tour="toolbar"
               onClick={() => setMobileMenuOpen((v) => !v)}
               aria-expanded={mobileMenuOpen}
               aria-label="Toggle planner tools menu"
@@ -810,7 +813,7 @@ export default function App() {
           </div>
 
           {/* Desktop Global Tools Bar (md+) */}
-          <div className="no-print hidden md:flex flex-wrap items-center gap-1.5 text-[11px]">
+          <div data-tour="toolbar" className="no-print hidden md:flex flex-wrap items-center gap-1.5 text-[11px]">
             <button
               type="button"
               onClick={() => setTemplatesOpen(true)}
@@ -1282,7 +1285,18 @@ export default function App() {
                 explore the 13-point timeline. Click any <strong>If Funded</strong> pill to
                 stress-test Plan B, or click any quarter column to see what fits.
               </span>
-              <div className="flex items-center gap-1.5 shrink-0">
+              <div className="flex flex-wrap items-center gap-1.5 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTimelineExpanded(false);
+                    setTourOpen(true);
+                  }}
+                  className="inline-flex items-center gap-1 rounded bg-teal-800 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-teal-900 cursor-pointer"
+                >
+                  <Compass className="h-3 w-3" />
+                  Quick Tour (5 steps)
+                </button>
                 <button
                   type="button"
                   onClick={handleStartBlank}
@@ -1351,7 +1365,7 @@ export default function App() {
           </div>
 
           {/* Unified Two-Tab Right Panel: "What Fits?" | "Team / Co-CI" */}
-          <div className="no-print rounded-lg border border-slate-200 bg-white shadow-xs overflow-hidden">
+          <div data-tour="assistant" className="no-print rounded-lg border border-slate-200 bg-white shadow-xs overflow-hidden">
             <div
               role="tablist"
               aria-label="Planning Assistant Tabs"
@@ -1616,6 +1630,17 @@ export default function App() {
         onClose={() => setDocsDrawerOpen(false)}
         rules={baseRules}
         onDownloadBackup={handleQuickBackupJson}
+        onStartTour={() => {
+          setDocsDrawerOpen(false);
+          setTimelineExpanded(false);
+          setTourOpen(true);
+        }}
+      />
+
+      <QuickTourOverlay
+        open={tourOpen}
+        onClose={() => setTourOpen(false)}
+        onSelectRightTab={setRightTab}
       />
 
       {/* 1-Step Undo Toast after destructive actions (Start Blank, Delete Scenario, Replace Template, Remove Co-CI) */}

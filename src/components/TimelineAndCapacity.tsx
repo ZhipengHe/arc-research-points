@@ -343,7 +343,7 @@ export function TimelineAndCapacity({
         {mobileView === 'cards' && (
           <>
             {/* Mobile Full-Width Scrollable Capacity Bar Chart (no 308px side column!) */}
-            <div className="border-b border-slate-200 bg-slate-50/40 px-3 pt-2.5 pb-2">
+            <div data-tour="capacity" className="border-b border-slate-200 bg-slate-50/40 px-3 pt-2.5 pb-2">
               <div className="mb-1.5 flex items-center justify-between text-[11px]">
                 <span className="font-semibold uppercase tracking-wide text-slate-600">
                   Quarterly Load (swipe &amp; tap)
@@ -480,6 +480,7 @@ export function TimelineAndCapacity({
             </div>
 
             {/* Mobile Touch-Friendly Grant Cards */}
+            <div data-tour="pipeline">
             {grants.length === 0 ? (
               <button
                 type="button"
@@ -645,6 +646,7 @@ export function TimelineAndCapacity({
                 })}
               </div>
             )}
+            </div>
           </>
         )}
       </div>
@@ -717,7 +719,7 @@ export function TimelineAndCapacity({
           </div>
 
           {/* Gantt Timeline Body */}
-          <div>
+          <div data-tour="pipeline">
             {grants.length > 0 && (
               <div className="relative">
                 {grants.map((grant) => {
@@ -1061,7 +1063,7 @@ export function TimelineAndCapacity({
           </div>
 
           {/* Stacked Quarterly Capacity Bar Chart (exact same 24-col grid!) */}
-          <div className="grid grid-cols-[308px_1fr] border-t-2 border-slate-200 bg-slate-50/40">
+          <div data-tour="capacity" className="grid grid-cols-[308px_1fr] border-t-2 border-slate-200 bg-slate-50/40">
             <div className="relative flex flex-col justify-between border-r border-slate-200 px-3 py-3">
               <div>
                 <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-600">
